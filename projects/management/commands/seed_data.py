@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.utils import timezone
 from projects.models import Project
+from accounts.models import UserProfile
 from datetime import date, timedelta
 import random
 
@@ -23,6 +24,7 @@ class Command(BaseCommand):
         if created:
             admin.set_password('admin123')
             admin.save()
+            UserProfile.objects.get_or_create(user=admin, defaults={'role': 'manager'})
             self.stdout.write(self.style.SUCCESS('  Created admin (admin / admin123)'))
         else:
             self.stdout.write('  Admin already exists')
@@ -34,6 +36,7 @@ class Command(BaseCommand):
         if created:
             user1.set_password('user123')
             user1.save()
+            UserProfile.objects.get_or_create(user=user1, defaults={'role': 'employee'})
             self.stdout.write(self.style.SUCCESS('  Created user1 (user1 / user123)'))
 
         user2, created = User.objects.get_or_create(
@@ -43,6 +46,7 @@ class Command(BaseCommand):
         if created:
             user2.set_password('user123')
             user2.save()
+            UserProfile.objects.get_or_create(user=user2, defaults={'role': 'employee'})
             self.stdout.write(self.style.SUCCESS('  Created user2 (user2 / user123)'))
 
         if Project.objects.exists():

@@ -38,7 +38,7 @@ def admin_chat_hub(request):
     return render(request, 'dashboard/chat.html', {
         'room_data': room_data,
         'current_user_id': request.user.id,
-        'user_role': getattr(request.user.profile, 'role', 'employee'),
+        'user_role': getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee',
         'is_admin': True,
     })
 
@@ -119,7 +119,7 @@ def employee_chat_hub(request):
     return render(request, 'chat/employee_chat.html', {
         'room_data': room_data,
         'current_user_id': request.user.id,
-        'user_role': getattr(request.user.profile, 'role', 'employee'),
+        'user_role': getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee',
         'is_admin': False,
     })
 
@@ -437,7 +437,7 @@ def api_delete_room(request, room_id):
     # Permission Logic: Check if the user is authorized to delete
     # Feature: Must be the original creator AND have a Manager or HR role
     is_creator = room.created_by == request.user
-    role = getattr(request.user.profile, 'role', 'employee')
+    role = getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee'
     is_authorized_role = role in ['manager', 'hr']
     
     # Security: If they don't meet the criteria, block the action
@@ -469,7 +469,7 @@ def _serialize_message(msg, current_user):
         'sender_id': msg.sender.id,
         'sender_username': msg.sender.username,
         'sender_is_staff': msg.sender.is_staff, # UX: To show "admin" badges
-        'sender_role': getattr(msg.sender.profile, 'role', 'employee'),
+        'sender_role': getattr(msg.sender, 'profile', None).role if hasattr(msg.sender, 'profile') else 'employee',
         # UX: If deleted, hide the content and show a placeholder instead
         'content': msg.content if not msg.is_deleted else '[Message deleted]',
         # Logic: Let the frontend know if "I" sent this (for right-side alignment)
