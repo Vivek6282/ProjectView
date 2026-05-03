@@ -4,66 +4,173 @@
 {% block title %}Welcome — Project View{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row align-items-center g-5 pv-intro-hero">
-        <div class="col-lg-6 reveal-item" style="--delay: 0.1s">
-            <div class="pv-overline">Getting Started</div>
-            <h1 class="pv-display-heading mb-4">Focus on your most <span class="text-accent underline-accent">critical</span> work.</h1>
-            <p class="pv-intro-desc">Welcome to Project View. We've simplified project tracking so you can spend less time managing and more time doing.</p>
-            <div class="d-flex flex-wrap gap-3">
-                <a href="/projects/" class="btn pv-btn-primary pv-btn-lg px-5">View All Projects</a>
-                {% if user.is_staff %}
-                    <a href="/dashboard/" class="btn pv-btn-outline pv-btn-lg px-5">Admin Dashboard</a>
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="col-lg-6 d-none d-lg-block reveal-item" style="--delay: 0.3s">
-            <div class="pv-intro-visual">
-                <div class="pv-intro-card-stack">
-                    <div class="pv-intro-float-card pv-float-1">
-                        <i class="bi bi-check2-circle fs-4"></i>
-                        <div class="small fw-600">Track milestones</div>
-                    </div>
-                    <div class="pv-intro-float-card pv-float-2">
-                        <i class="bi bi-bar-chart-line fs-4"></i>
-                        <div class="small fw-600">Analyze performance</div>
-                    </div>
-                    <div class="pv-intro-float-card pv-float-3">
-                        <i class="bi bi-people fs-4"></i>
-                        <div class="small fw-600">Manage teams</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<style>
+    /* Cinematic Intro Styles */
+    .intro-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        z-index: -1;
+    }
 
-    <div class="row g-4 mt-2">
-        <div class="col-md-4 reveal-item" style="--delay: 0.2s">
-            <div class="pv-tip-card">
-                <div class="pv-tip-icon">
-                    <i class="bi bi-search"></i>
-                </div>
-                <h5>Quick Navigation</h5>
-                <p>Use the search bar in the projects view to find specific work items instantly by title or description.</p>
-            </div>
+    .intro-bg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.6) saturate(1.2);
+        animation: ken-burns 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes ken-burns {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.1); }
+    }
+
+    .intro-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+
+    [data-bs-theme="light"] .intro-overlay {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%);
+    }
+
+    .hero-container {
+        min-height: calc(100vh - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 2rem;
+        padding: 4rem;
+        max-width: 1000px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: slide-up-fade 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-bs-theme="light"] .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    }
+
+    @keyframes slide-up-fade {
+        0% { opacity: 0; transform: translateY(30px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .floating-badge {
+        position: absolute;
+        background: var(--pv-accent);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .intro-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to bottom right, #fff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    [data-bs-theme="light"] .intro-title {
+        background: linear-gradient(to bottom right, #0f172a, #475569);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .feature-item {
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        background: rgba(var(--pv-accent-rgb), 0.1);
+        color: var(--pv-accent);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+    }
+</style>
+
+<div class="intro-wrapper">
+    <img src="{% static 'images/hero-bg.png' %}" class="intro-bg" alt="Team Workspace">
+    <div class="intro-overlay"></div>
+</div>
+
+<div class="hero-container">
+    <div class="glass-card text-center position-relative">
+        <div class="floating-badge">PROJECT VIEW V2.0</div>
+        
+        <h1 class="intro-title">Elevate Your <span style="color: var(--pv-accent); -webkit-text-fill-color: var(--pv-accent);">Workflow</span></h1>
+        
+        <p class="lead mb-5 opacity-75" style="max-width: 600px; margin: 0 auto;">
+            Connect with your team, manage critical deadlines, and drive your projects to completion with our editorial-grade dashboard.
+        </p>
+
+        <div class="d-flex justify-content-center gap-3 mb-5">
+            <a href="/projects/" class="btn pv-btn-primary px-5 py-3 fw-bold shadow-lg">Enter Workspace</a>
+            {% if user.is_staff %}
+                <a href="/dashboard/" class="btn pv-btn-outline px-5 py-3 fw-bold">Admin Portal</a>
+            {% endif %}
         </div>
-        <div class="col-md-4 reveal-item" style="--delay: 0.35s">
-            <div class="pv-tip-card">
-                <div class="pv-tip-icon">
-                    <i class="bi bi-funnel"></i>
-                </div>
-                <h5>Filter & Sort</h5>
-                <p>Narrow down your view using categories, status, or priority to focus on what matters most today.</p>
+
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-chat-quote"></i></div>
+                <h6>Real-time Chat</h6>
+                <p class="small opacity-50">Instant team collaboration</p>
             </div>
-        </div>
-        <div class="col-md-4 reveal-item" style="--delay: 0.5s">
-            <div class="pv-tip-card">
-                <div class="pv-tip-icon">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-                <h5>Smart Deadlines</h5>
-                <p>Automatic tracking highlighting overdue tasks and upcoming milestones to keeps your team on schedule.</p>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <h6>Live Metrics</h6>
+                <p class="small opacity-50">Data-driven insights</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                <h6>Secure Cloud</h6>
+                <p class="small opacity-50">Powered by TiDB</p>
             </div>
         </div>
     </div>
