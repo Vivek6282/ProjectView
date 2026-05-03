@@ -39,7 +39,7 @@
     }
 
     [data-bs-theme="light"] .intro-overlay {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.7) 100%);
     }
 
     .hero-container {
@@ -63,9 +63,9 @@
     }
 
     [data-bs-theme="light"] .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+        background: rgba(15, 23, 42, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
     }
 
     @keyframes slide-up-fade {
@@ -87,21 +87,20 @@
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
 
-    .intro-title {
+    .intro-title, [data-bs-theme="light"] .intro-title {
         font-size: 3.5rem;
         font-weight: 800;
         letter-spacing: -0.02em;
         line-height: 1.1;
         margin-bottom: 1.5rem;
-        background: linear-gradient(to bottom right, #fff, #94a3b8);
+        background: linear-gradient(to bottom right, #fff, #cbd5e1);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        color: #fff;
     }
 
-    [data-bs-theme="light"] .intro-title {
-        background: linear-gradient(to bottom right, #0f172a, #475569);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    .glass-card p, .glass-card h6, .glass-card .small {
+        color: #fff !important;
     }
 
     .feature-grid {
