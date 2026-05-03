@@ -3,7 +3,7 @@ services:
     name: projectview
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn projectview.wsgi:application"
+    startCommand: "gunicorn --pythonpath . projectview.wsgi:application"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
