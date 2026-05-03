@@ -81,11 +81,15 @@ class ChatMessage(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            # If content changed and not already marked as edited
-            old_msg = ChatMessage.objects.get(pk=self.pk)
-            if old_msg.content != self.content and not self.is_deleted:
-                self.is_edited = True
-                self.edited_at = timezone.now()
+            try:
+                # Check if the content has actually changed since the last save
+                old_msg = ChatMessage.objects.get(pk=self.pk)
+                if old_msg.content != self.content and not self.is_deleted:
+                    # Only mark as edited if it wasn't a brand new message being tagged (like in forwarding)
+                    self.is_edited = True
+                    self.edited_at = timezone.now()
+            except ChatMessage.DoesNotExist:
+                pass
         super().save(*args, **kwargs)
 
     def parse_mentions(self):
