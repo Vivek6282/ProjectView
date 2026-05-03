@@ -4,6 +4,11 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
-    "django>=6.0.3",
+    "django>=5.0",
     "reportlab>=4.4.10",
+    "gunicorn",
+    "whitenoise[broccoli]",
+    "dj-database-url",
+    "PyMySQL",
+    "python-dotenv",
 ]
