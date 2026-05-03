@@ -1,0 +1,108 @@
+# Project View — Full Django Build Plan
+
+Premium Django 5.x project-deadline tracker with role-based access, admin dashboard with Chart.js analytics, admin-only user management, and Brand Doula–inspired editorial UI (earthy olive/sage tones, strong typography, premium spacing, scroll animations).
+
+## Design Language (from screenshots)
+
+- **Palette**: Neutral warm backgrounds (`#F5F3EF`, `#EDEAE4`), olive/sage accent (`#5C6B4F`, `#6B7F5E`), dark text (`#1A1A1A`), muted borders (`#C5C0B6`)
+- **Typography**: Inter or similar modern sans-serif, large editorial headings (uppercase, tracked), readable body
+- **Cards**: Soft rounded corners, subtle borders, generous padding
+- **Layout**: Clean editorial grid, lots of whitespace, two-column hero sections
+- **Animations**: Scroll-reveal via IntersectionObserver, staggered cards, hover lifts, `prefers-reduced-motion` respected
+
+## Proposed Structure
+
+```
+Project View/
+├── projectview/          # Django project package
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
+├── accounts/             # Auth app (login, user mgmt)
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── forms.py
+│   └── templates/accounts/
+├── projects/             # Projects app (CRUD + read)
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── forms.py
+│   └── templates/projects/
+├── dashboard/            # Admin dashboard app
+│   ├── views.py
+│   ├── urls.py
+│   └── templates/dashboard/
+├── templates/            # Global base templates
+│   ├── base.html
+│   ├── base_dashboard.html
+│   └── intro.html
+├── static/
+│   ├── css/style.css
+│   ├── js/main.js
+│   └── js/charts.js
+├── manage.py
+└── README.md
+```
+
+## Apps & Responsibilities
+
+### 1. `accounts` app
+- Login/logout views (custom template)
+- Admin-only user creation (`/dashboard/users/create/`)
+- User list (`/dashboard/users/`)
+- Activate/deactivate toggle
+- No public signup route
+
+### 2. `projects` app
+- `Project` model with all specified fields
+- User-facing read-only views (`/projects/`, `/projects/<id>/`)
+- Admin CRUD views (`/dashboard/projects/*`)
+- Search, filter, sort, tabs (Upcoming/Overdue/All)
+
+### 3. `dashboard` app
+- Analytics overview (`/dashboard/`)
+- KPI cards + Chart.js charts
+- JSON endpoint (`/dashboard/analytics.json`)
+- Navigation to projects CRUD and user management
+
+### 4. `management command: seed_data`
+- 1 Admin (admin / admin123)
+- 2 Users (user1 / user123, user2 / user123)
+- 15-20 projects with mixed statuses, priorities, categories, deadlines
+
+## Routes Summary
+
+| Route | Access | Purpose |
+|-------|--------|---------|
+| `/login/` | Public | Login page |
+| `/logout/` | Auth | Logout |
+| `/intro/` | User | Post-login welcome |
+| `/projects/` | User | Read-only list |
+| `/projects/<id>/` | User | Read-only detail |
+| `/dashboard/` | Admin | Analytics |
+| `/dashboard/projects/` | Admin | Projects table |
+| `/dashboard/projects/create/` | Admin | Create project |
+| `/dashboard/projects/<id>/edit/` | Admin | Edit project |
+| `/dashboard/projects/<id>/delete/` | Admin | Delete confirm |
+| `/dashboard/users/` | Admin | User list |
+| `/dashboard/users/create/` | Admin | Create user |
+
+## Verification Plan
+
+### Automated Tests
+- `python manage.py migrate` — no errors
+- `python manage.py seed_data` — creates data
+- `python manage.py runserver` — serves correctly
+- Manual browser check of all routes
+
+### Manual Verification
+- Login as admin → lands on `/dashboard/`
+- Login as user → lands on `/intro/`
+- Users cannot access `/dashboard/*`
+- Admin can CRUD projects and users
+- Charts render with real data
+- Scroll animations work
+- Reduced motion respected

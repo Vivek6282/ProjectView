@@ -1,0 +1,136 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Manage Users — Project View Admin{% endblock %}
+{% block dashboard_title %}User Administration{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 reveal-item" style="--delay: 0.1s">
+    <div>
+        <h2 class="pv-overline">Access Management</h2>
+        <h3 class="fw-bold">Local Account Registry</h3>
+    </div>
+    {% if user.profile.role == 'hr' %}
+    <a href="/dashboard/users/create/" class="btn pv-btn-primary">
+        <i class="bi bi-person-plus-fill me-2"></i>Register New User
+    </a>
+    {% endif %}
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-success pv-alert mb-4 fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="pv-table-card reveal-item" style="--delay: 0.2s">
+    <div class="table-responsive">
+        <table class="table pv-table mb-0">
+            <thead>
+                <tr>
+                    <th>Identification</th>
+                    <th>Email Address</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th>Joined date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for acc in users %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ acc.username }}</div>
+                        {% if acc == user %}<span class="badge bg-light text-dark smaller border">You</span>{% endif %}
+                    </td>
+                    <td>{{ acc.email|default:"None provided" }}</td>
+                    <td>
+                        {% if acc.is_active %}
+                            <span class="pv-badge pv-badge-low">Active</span>
+                        {% else %}
+                            <span class="pv-badge pv-badge-high">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if acc.profile.role == 'hr' %}
+                            <span class="pv-badge-hr">HR Manager</span>
+                        {% elif acc.profile.role == 'manager' %}
+                            <span class="pv-badge-manager">Manager</span>
+                        {% else %}
+                            <span class="pv-badge-employee">Employee</span>
+                        {% endif %}
+                    </td>
+                    <td class="smaller">{{ acc.date_joined|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            {% if acc != user %}
+                                <!-- Direct Chat Button -->
+                                <button onclick="ChatWidget.openDirectChat({{ acc.id }}, '{{ acc.username|escapejs }}')" 
+                                        class="btn pv-btn-outline p-1 px-3 small d-flex align-items-center gap-1" title="Message">
+                                    <i class="bi bi-chat-text-fill"></i> Chat
+                                </button>
+
+                                <!-- Nudge / Send Message Button -->
+                                <button type="button" class="btn pv-btn-outline p-1 px-3 small d-flex align-items-center gap-1" 
+                                        data-bs-toggle="modal" data-bs-target="#nudgeModal{{ acc.id }}" title="Nudge">
+                                    <i class="bi bi-megaphone-fill"></i>
+                                </button>
+                                
+                                {% if user.profile.role == 'hr' and not acc.is_superuser %}
+                                <form method="post" action="/dashboard/users/{{ acc.id }}/toggle/">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn {% if acc.is_active %}pv-btn-danger-outline{% else %}pv-btn-outline{% endif %} p-1 px-3 small">
+                                        {% if acc.is_active %}Deactivate{% else %}Activate{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted-custom smaller italic">System Restricted</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Move Modals outside of the table to fix Z-index / Backdrop issues -->
+{% for acc in users %}
+    {% if acc != user and not acc.is_superuser %}
+        <div class="modal fade" id="nudgeModal{{ acc.id }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: var(--pv-radius); z-index: 1060;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="pv-form-title fs-5 mb-0">Send Urgent Nudge to {{ acc.username }}</h5>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="/dashboard/users/{{ acc.id }}/message/">
+                        {% csrf_token %}
+                        <div class="modal-body py-4 text-start">
+                            <div class="mb-3">
+                                <label class="pv-label mb-2">Message Content</label>
+                                <textarea name="content" class="form-control pv-input" rows="4" 
+                                          placeholder="Type your message (e.g., Please finish the overdue projects!)" required></textarea>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input name="is_urgent" class="form-check-input" type="checkbox" checked id="prio{{ acc.id }}">
+                                <label class="form-check-label pv-label ms-2" for="prio{{ acc.id }}">Mark as High Priority Popup</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0 pb-4 justify-content-center">
+                            <button type="submit" class="btn pv-btn-primary px-5">
+                                <i class="bi bi-send-fill me-2"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+
+{% endblock %}

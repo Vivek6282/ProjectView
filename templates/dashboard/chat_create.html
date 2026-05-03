@@ -1,0 +1,73 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}New Conversation — Project View Admin{% endblock %}
+{% block dashboard_title %}New Conversation{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="row justify-content-center reveal-item" style="--delay: 0.1s">
+    <div class="col-lg-7 col-xl-6">
+        <a href="/dashboard/chat/" class="pv-back-link mb-4 d-inline-flex">
+            <i class="bi bi-arrow-left me-2"></i>Back to Messages
+        </a>
+
+        <div class="pv-form-card mt-3">
+            <div class="text-center mb-4">
+                <div class="pv-chat-create-icon mx-auto mb-3">
+                    <i class="bi bi-chat-dots-fill"></i>
+                </div>
+                <h2 class="pv-form-title">Start a Conversation</h2>
+                <p class="text-muted-custom small">Create a group chat or direct message with your team members.</p>
+            </div>
+
+            <form method="post" action="/dashboard/chat/create/">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="pv-label mb-2" for="id_name">
+                        <i class="bi bi-hash me-1"></i>Room Name
+                    </label>
+                    {{ form.name }}
+                </div>
+
+                <div class="mb-4">
+                    <label class="pv-label mb-3">
+                        <i class="bi bi-people me-1"></i>Select Members
+                    </label>
+                    <div class="pv-member-grid">
+                        {% for checkbox in form.members %}
+                        <label class="pv-member-option">
+                            {{ checkbox.tag }}
+                            <div class="pv-member-option-avatar">
+                                {{ checkbox.choice_label|first|upper }}
+                            </div>
+                            <div class="pv-member-option-info">
+                                <span class="pv-member-option-name">{{ checkbox.choice_label }}</span>
+                            </div>
+                            <div class="pv-member-check-indicator">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-danger pv-alert mb-4">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                        <div><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn pv-btn-primary w-100 py-3">
+                    <i class="bi bi-plus-circle me-2"></i>Create Conversation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

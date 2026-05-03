@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Projects — Project View{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <header class="mb-5 reveal-item" style="--delay: 0.1s">
+        <div class="pv-overline">Milestones</div>
+        <h1 class="pv-page-heading">All Projects</h1>
+        <p class="text-muted-custom">Track, filter, and manage your current project deadlines.</p>
+    </header>
+
+    <div class="pv-filter-bar mb-4 reveal-item" style="--delay: 0.2s">
+        <form method="get" action="/projects/" class="row g-3 align-items-end">
+            <div class="col-lg-4">
+                <label class="pv-label mb-2">Search Projects</label>
+                <div class="input-group pv-input-group">
+                    <span class="input-group-text pv-input-icon"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control pv-input" placeholder="Search title or details..." value="{{ q }}">
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="pv-label mb-2">Category</label>
+                <select name="category" class="form-select pv-input" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat_val, cat_name in categories %}
+                        <option value="{{ cat_val }}" {% if category == cat_val %}selected{% endif %}>{{ cat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="pv-label mb-2">Status</label>
+                <select name="status" class="form-select pv-input" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    {% for stat_val, stat_name in statuses %}
+                        <option value="{{ stat_val }}" {% if status == stat_val %}selected{% endif %}>{{ stat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn pv-btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="pv-tabs mb-5 reveal-item" style="--delay: 0.3s">
+        <a href="?tab=all" class="pv-tab {% if tab == 'all' %}active{% endif %}">
+            <i class="bi bi-grid-fill me-2"></i>All Projects
+        </a>
+        
+        <a href="?tab=upcoming" class="pv-tab {% if tab == 'upcoming' %}active{% endif %}">
+            <i class="bi bi-calendar-event me-2"></i>Upcoming Milestones
+        </a>
+        
+        <a href="?tab=overdue" class="pv-tab {% if tab == 'overdue' %}active{% endif %}">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Overdue Deadlines
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for project in projects %}
+            <div class="col-md-6 col-lg-4 reveal-item" style="--delay: {{ forloop.counter0|add:4|stringformat:'d' }}0ms" onclick="location.href='/projects/{{ project.id }}/'">
+                <div class="pv-project-card {% if project.is_overdue %}pv-card-overdue{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="pv-badge {% if project.priority == 'High' %}pv-badge-high{% elif project.priority == 'Medium' %}pv-badge-medium{% else %}pv-badge-low{% endif %}">
+                            <i class="bi bi-flag-fill me-1"></i>{{ project.priority }}
+                        </span>
+                        
+                        {% if project.is_overdue %}
+                            <span class="pv-overdue-badge"><i class="bi bi-alarm-fill"></i> Overdue</span>
+                        {% else %}
+                            <span class="text-muted-custom smaller">{{ project.status }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 class="pv-card-title">{{ project.title }}</h3>
+                    <div class="pv-card-category mb-4">{{ project.category }}</div>
+                    
+                    <div class="pv-card-footer mt-auto">
+                        {% if project.status == 'Done' %}
+                            <span class="pv-done-badge"><i class="bi bi-check-circle-fill"></i> Completed</span>
+                        {% elif project.is_overdue %}
+                            <span class="text-danger fw-bold small">Overdue</span>
+                        {% else %}
+                            <span class="pv-days-badge">{{ project.days_left }} days left</span>
+                        {% endif %}
+
+                        <span class="pv-card-deadline">{{ project.deadline|date:'M d, Y' }}</span>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5 pv-empty-state">
+                <i class="bi bi-folder2-open display-4 text-muted-custom mb-3 d-block"></i>
+                <h4 class="fw-bold">No projects found.</h4>
+                <p class="text-muted-custom">Try adjusting your filters or search query.</p>
+                <a href="/projects/" class="btn pv-btn-outline mt-3">Reset All Filters</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

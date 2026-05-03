@@ -1,0 +1,122 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Analytics — Project View Admin{% endblock %}
+{% block dashboard_title %}Project Analytics Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4 mb-5">
+    <div class="col-md-3 reveal-item" style="--delay: 0.05s">
+        <div class="pv-kpi-card pv-kpi-total">
+            <div class="pv-kpi-icon"><i class="bi bi-folder-fill"></i></div>
+            <div class="pv-kpi-value">{{ stats.total }}</div>
+            <div class="pv-kpi-label">Total Projects</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 reveal-item" style="--delay: 0.1s">
+        <div class="pv-kpi-card pv-kpi-upcoming">
+            <div class="pv-kpi-icon"><i class="bi bi-calendar-event-fill"></i></div>
+            <div class="pv-kpi-value">{{ stats.upcoming }}</div>
+            <div class="pv-kpi-label">Upcoming Milestones</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 reveal-item" style="--delay: 0.15s">
+        <div class="pv-kpi-card pv-kpi-overdue">
+            <div class="pv-kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="pv-kpi-value">{{ stats.overdue }}</div>
+            <div class="pv-kpi-label">Overdue Tasks</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 reveal-item" style="--delay: 0.2s">
+        <div class="pv-kpi-card pv-kpi-done">
+            <div class="pv-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="pv-kpi-value">{{ stats.completed }}</div>
+            <div class="pv-kpi-label">Completed Deliverables</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Main Focus: Completion Velocity -->
+    <div class="col-lg-8">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.25s">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="pv-chart-title mb-0">Monthly Completion Velocity</h3>
+                <span class="badge bg-light text-dark smaller border">Last 6 Months</span>
+            </div>
+            <div style="height: 320px;">
+                <canvas id="chartVelocity"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Secondary: Status Matrix -->
+    <div class="col-lg-4">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.3s">
+            <h3 class="pv-chart-title">Priority vs. Status Matrix</h3>
+            <div style="height: 320px;">
+                <canvas id="chartStatusMatrix"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-12">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.35s">
+            <h3 class="pv-chart-title">Timeline & Deadline Distributions</h3>
+            <div style="height: 350px;">
+                <canvas id="chartTimeline"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.4s">
+            <h3 class="pv-chart-title">Administrator Workload</h3>
+            <div style="height: 280px;">
+                <canvas id="chartUserWorkload"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.45s">
+            <h3 class="pv-chart-title">Category Breakdown</h3>
+            <div style="height: 280px;">
+                <canvas id="chartCategory"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.5s">
+            <h3 class="pv-chart-title">Priority Distribution</h3>
+            <div style="height: 280px;">
+                <canvas id="chartPriority"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-md-6">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.55s">
+            <h3 class="pv-chart-title">Current Status State</h3>
+            <div style="height: 240px;">
+                <canvas id="chartStatus"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="pv-chart-card reveal-item" style="--delay: 0.6s">
+            <h3 class="pv-chart-title">Overdue Trend (Last 5 Weeks)</h3>
+            <div style="height: 240px;">
+                <canvas id="chartOverdueTrend"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

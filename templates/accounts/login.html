@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign in to Project View — Portfolio management systems.">
+    <title>Sign In — Project View</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <style>
+        .pv-login-left {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1545239351-ef35f43d514b?q=80&w=2000&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pv-login-left-content {
+            position: relative;
+            z-index: 10;
+            max-width: 480px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .pv-login-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -0.01em;
+            margin-bottom: 2rem;
+            color: #ffffff;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .pv-login-feature {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: rgba(255,255,255,0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .pv-login-feature:hover {
+            transform: translateX(10px);
+            color: #ffffff;
+        }
+
+        .pv-login-feature i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            font-size: 1.2rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .login-entrance {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: loginReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes loginReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.25s; }
+        .delay-3 { animation-delay: 0.4s; }
+        .delay-4 { animation-delay: 0.55s; }
+    </style>
+</head>
+<body class="body-login">
+    <div class="container-fluid min-vh-100 p-0">
+        <div class="row g-0 min-vh-100">
+            <!-- Left Side: Cinematic Brand Section -->
+            <div class="col-lg-6 d-none d-lg-flex pv-login-left">
+                <div class="pv-login-left-content text-white p-5">
+                    <div class="pv-login-brand mb-4 login-entrance d-flex align-items-center gap-2">
+                        <i class="bi bi-grid-3x3-gap-fill fs-3"></i>
+                        <span class="fw-800 fs-4">Project View</span>
+                    </div>
+                    
+                    <h1 class="pv-login-headline login-entrance delay-1">
+                        Track Deadlines.<br>
+                        Manage Projects.<br>
+                        Stay on Schedule.
+                    </h1>
+                    
+                    <div class="pv-login-features mt-5">
+                        <div class="pv-login-feature login-entrance delay-2">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>Upcoming milestones instantly</span>
+                        </div>
+                        <div class="pv-login-feature login-entrance delay-3">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span>Status & priority tracking</span>
+                        </div>
+                        <div class="pv-login-feature login-entrance delay-4">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Admin dashboard analytics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Clean Auth Form Section -->
+            <div class="col-lg-6 d-flex align-items-center justify-content-center pv-login-right">
+                <div class="pv-login-card shadow-lg p-4 p-md-5">
+                    <div class="d-lg-none text-center mb-5">
+                        <div class="pv-login-brand-mobile">
+                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>Project View
+                        </div>
+                    </div>
+                    
+                    <h2 class="pv-login-title fs-3 fw-800">Sign in to Project View</h2>
+                    <p class="pv-login-subtitle mb-5">Track deadlines. Stay on schedule.</p>
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-danger pv-alert mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i> {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="/login/" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="id_username" class="form-label pv-label">Username</label>
+                            <div class="input-group pv-input-group">
+                                <span class="input-group-text pv-input-icon"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control pv-input" id="id_username" name="username" placeholder="Username" required autofocus>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <label for="id_password" class="form-label pv-label">Password</label>
+                            <div class="input-group pv-input-group">
+                                <span class="input-group-text pv-input-icon"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control pv-input" id="id_password" name="password" placeholder="Password" required>
+                                <button class="btn pv-input-icon pv-toggle-pw" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn pv-btn-primary w-100 py-3 rounded-3 shadow-sm" id="btnSignIn">
+                            Sign In <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </form>
+                    
+                    <p class="text-center text-muted-custom small mt-5 mb-0">
+                        Contact your admin if you need an account.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

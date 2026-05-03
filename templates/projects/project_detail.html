@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} — Project View{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-8">
+            <a href="/projects/" class="pv-back-link mb-4 reveal-item" style="--delay: 0.1s">
+                <i class="bi bi-arrow-left me-2"></i>Back to All Projects
+            </a>
+
+            <div class="pv-detail-card reveal-item" style="--delay: 0.2s">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <span class="pv-badge {% if project.priority == 'High' %}pv-badge-high{% elif project.priority == 'Medium' %}pv-badge-medium{% else %}pv-badge-low{% endif %}">
+                        {{ project.priority }} Priority
+                    </span>
+                    <span class="pv-badge {% if project.status == 'Planned' %}pv-badge-status-planned{% elif project.status == 'In Progress' %}pv-badge-status-in-progress{% else %}pv-badge-status-done{% endif %}">
+                        {{ project.status }}
+                    </span>
+                </div>
+
+                <h1 class="pv-page-heading mb-4">{{ project.title }}</h1>
+                <div class="pv-detail-body">
+                    {% if project.details %}
+                        {{ project.details|linebreaks }}
+                    {% else %}
+                        <p class="text-muted-custom italic">No additional details provided for this project.</p>
+                    {% endif %}
+                </div>
+
+                {% if user.is_staff %}
+                    <div class="mt-5 pt-4 border-top">
+                        <div class="pv-overline mb-3">Administrative Actions</div>
+                        <div class="d-flex gap-3">
+                            <a href="/dashboard/projects/{{ project.id }}/edit/" class="btn pv-btn-outline px-4">
+                                <i class="bi bi-pencil-square me-2"></i>Edit Project
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <aside class="pv-detail-sidebar reveal-item" style="--delay: 0.3s">
+                <h5 class="pv-section-heading mb-4">Timeline & Meta</h5>
+                
+                <div class="pv-meta-item">
+                    <span class="pv-meta-label">Category</span>
+                    <span class="pv-meta-value">{{ project.category }}</span>
+                </div>
+                <div class="pv-meta-item">
+                    <span class="pv-meta-label">Deadline</span>
+                    <span class="pv-meta-value {% if project.is_overdue %}text-red{% endif %}">
+                        {{ project.deadline|date:'M d, Y' }}
+                    </span>
+                </div>
+                <div class="pv-meta-item">
+                    <span class="pv-meta-label">Status</span>
+                    <div class="text-end">
+                        {% if project.status == 'Done' %}
+                            <span class="pv-done-badge">Completed</span>
+                        {% elif project.is_overdue %}
+                            <span class="pv-overdue-badge">Overdue</span>
+                        {% else %}
+                            <span class="pv-days-badge">{{ project.days_left }} days left</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="pv-meta-item">
+                    <span class="pv-meta-label">Created By</span>
+                    <span class="pv-meta-value">{{ project.created_by.username|default:"System" }}</span>
+                </div>
+                <div class="pv-meta-item">
+                    <span class="pv-meta-label">Last Updated</span>
+                    <span class="pv-meta-value smaller">{{ project.updated_at|date:'M d, Y H:i' }}</span>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

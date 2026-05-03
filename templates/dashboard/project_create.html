@@ -1,0 +1,69 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create Project — Project View Admin{% endblock %}
+{% block dashboard_title %}New Project Creation{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center pt-5">
+    <div class="col-lg-8">
+        <a href="/dashboard/projects/" class="pv-back-link mb-4 reveal-item" style="--delay: 0.1s">
+            <i class="bi bi-arrow-left me-2"></i>Back to Portfolio Management
+        </a>
+
+        <div class="pv-form-card border-0 shadow-lg reveal-item" style="--delay: 0.2s">
+            <div class="mb-4">
+                <h2 class="pv-form-title">Enter Global Project Details</h2>
+                <p class="text-muted-custom small">Provide the necessary project metadata for tracking and analytics.</p>
+            </div>
+            
+            <form method="post" action="/dashboard/projects/create/" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.title.id_for_label }}" class="form-label pv-label">Project Identification</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="text-red smaller mt-1">{{ form.title.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.category.id_for_label }}" class="form-label pv-label">Work Category</label>
+                        {{ form.category }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.deadline.id_for_label }}" class="form-label pv-label">Final Deadline Date</label>
+                        {{ form.deadline }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.status.id_for_label }}" class="form-label pv-label">Current Pipeline Status</label>
+                    <div class="d-flex gap-3 flex-wrap">
+                        {{ form.status }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.priority.id_for_label }}" class="form-label pv-label">Executive Priority Level</label>
+                    {{ form.priority }}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.details.id_for_label }}" class="form-label pv-label">Project Documentation Details</label>
+                    {{ form.details }}
+                </div>
+                
+                <div class="pt-3 border-top mt-5 d-flex gap-2">
+                    <button type="submit" class="btn pv-btn-primary px-5 w-100">
+                        <i class="bi bi-patch-check-fill me-2"></i>Save Final Project
+                    </button>
+                    <a href="/dashboard/projects/" class="btn pv-btn-outline px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create New User — Project View{% endblock %}
+{% block dashboard_title %}User Registration{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center pt-5">
+    <div class="col-lg-6">
+        <a href="/dashboard/users/" class="pv-back-link mb-4 reveal-item" style="--delay: 0.1s">
+            <i class="bi bi-arrow-left me-2"></i>Back to User Administration
+        </a>
+
+        <div class="pv-form-card border-0 shadow-lg reveal-item" style="--delay: 0.2s">
+            <div class="mb-4">
+                <h2 class="pv-form-title">Register Local Account</h2>
+                <p class="text-muted-custom small">Create a new user with specific permissions and access levels.</p>
+            </div>
+            
+            <form method="post" action="/dashboard/users/create/" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.username.id_for_label }}" class="form-label pv-label">Username Identification</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="text-red smaller mt-1">{{ form.username.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.email.id_for_label }}" class="form-label pv-label">Email Address (Optional)</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-red smaller mt-1">{{ form.email.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.password.id_for_label }}" class="form-label pv-label">New Password</label>
+                        {{ form.password }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.password_confirm.id_for_label }}" class="form-label pv-label">Confirm Password</label>
+                        {{ form.password_confirm }}
+                    </div>
+                    {% if form.non_field_errors %}
+                        <div class="col-12 mt-2">
+                            <div class="text-red smaller">{{ form.non_field_errors|striptags }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="px-3 py-3 bg-light rounded mb-4">
+                    <div class="form-check form-switch mb-2">
+                        {{ form.is_staff }}
+                        <label class="form-check-label pv-label ms-2" for="{{ form.is_staff.id_for_label }}">Grant Administrative Access</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label pv-label ms-2" for="{{ form.is_active.id_for_label }}">Enable Account Immediately</label>
+                    </div>
+                </div>
+                
+                <div class="pt-3 border-top mt-5">
+                    <button type="submit" class="btn pv-btn-primary px-5 w-100 mb-3">
+                        <i class="bi bi-person-check-fill me-2"></i>Create User Account
+                    </button>
+                    <a href="/dashboard/users/" class="btn btn-link text-muted-custom text-decoration-none w-100 small">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

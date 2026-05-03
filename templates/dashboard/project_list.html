@@ -1,0 +1,64 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Manage Projects — Project View Admin{% endblock %}
+{% block dashboard_title %}Project Administration{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 reveal-item" style="--delay: 0.1s">
+    <div>
+        <h2 class="pv-overline">Global Portfolio</h2>
+        <h3 class="fw-bold">Project Inventory</h3>
+    </div>
+    <a href="/dashboard/projects/create/" class="btn pv-btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Create New Project
+    </a>
+</div>
+
+<div class="pv-table-card reveal-item" style="--delay: 0.2s">
+    <div class="table-responsive">
+        <table class="table pv-table mb-0">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Deadline</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr class="{% if project.is_overdue %}table-overdue{% endif %}">
+                    <td>
+                        <div class="fw-bold">{{ project.title }}</div>
+                        <div class="text-muted-custom smaller font-monospace">#{{ project.id|stringformat:"04d" }}</div>
+                    </td>
+                    <td>{{ project.category }}</td>
+                    <td>{{ project.status }}</td>
+                    <td>{{ project.priority }}</td>
+                    <td>{{ project.deadline|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/dashboard/projects/{{ project.id }}/edit/" class="btn pv-btn-outline p-1 px-2" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="/dashboard/projects/{{ project.id }}/delete/" class="btn pv-btn-danger-outline p-1 px-2" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted-custom">
+                        No projects available. Start by creating one.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

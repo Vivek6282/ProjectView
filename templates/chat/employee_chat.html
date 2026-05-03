@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages — Project View{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-3 px-lg-4 py-4">
+    <!-- Floating Sidebar Toggle -->
+    <button class="pv-floating-nav-toggle d-lg-none" onclick="ChatApp.toggleSidebar()" title="Toggle Rooms">
+        <i class="bi bi-layout-sidebar-inset"></i>
+    </button>
+
+    <div class="pv-chat-container pv-chat-employee reveal-item" style="--delay: 0.1s">
+        <!-- Left: Room List -->
+        <div class="pv-chat-sidebar" id="chatSidebar">
+            <div class="pv-chat-sidebar-header">
+                <h3 class="pv-chat-sidebar-title">My Messages</h3>
+                <button class="btn pv-btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#newConvoModal">
+                    <i class="bi bi-plus-lg me-1"></i>New
+                </button>
+            </div>
+            <div class="pv-chat-search-wrap">
+                <i class="bi bi-search pv-chat-search-icon"></i>
+                <input type="text" id="roomSearch" class="form-control pv-input pv-chat-search" placeholder="Search conversations...">
+            </div>
+            <div class="pv-chat-room-list" id="roomList">
+                {% for item in room_data %}
+                <div class="pv-chat-room-item {% if item.unread_count > 0 %}has-unread{% endif %}"
+                     data-room-id="{{ item.room.id }}"
+                     onclick="ChatApp.loadRoom({{ item.room.id }})">
+                    <div class="pv-chat-avatar">
+                        {{ item.room.name|first|upper }}
+                    </div>
+                    <div class="pv-chat-room-info">
+                        <div class="pv-chat-room-name">{{ item.room.name }}</div>
+                        <div class="pv-chat-room-preview">
+                            {% if item.last_message %}
+                                <strong>{{ item.last_message.sender.username }}:</strong>
+                                {{ item.last_message.content|truncatechars:35|default:"[attachment]" }}
+                            {% else %}
+                                No messages yet
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="pv-chat-room-meta">
+                        {% if item.last_message %}
+                        <div class="pv-chat-room-time">{{ item.last_message.created_at|timesince }} ago</div>
+                        {% endif %}
+                        {% if item.unread_count > 0 %}
+                        <div class="pv-chat-unread-badge">{{ item.unread_count }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="pv-chat-empty-rooms">
+                    <i class="bi bi-chat-square-text"></i>
+                    <p>No conversations yet</p>
+                    <button class="btn pv-btn-outline btn-sm" data-bs-toggle="modal" data-bs-target="#newConvoModal">
+                        Start one
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: Chat Area -->
+        <div class="pv-chat-main" id="chatMain">
+            <div class="pv-chat-placeholder" id="chatPlaceholder">
+                <div class="pv-chat-placeholder-inner">
+                    <div class="pv-chat-placeholder-icon">
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <h4>Select a conversation</h4>
+                    <p class="text-muted-custom">Choose from the left or start a new one</p>
+                </div>
+            </div>
+
+            <div class="pv-chat-active" id="chatActive" style="display: none;">
+                <div class="pv-chat-header" id="chatHeader">
+                    <button class="pv-chat-back-btn d-lg-none" onclick="ChatApp.closeRoom()" title="Back to List">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button class="btn btn-link p-0 text-decoration-none me-3 d-none d-lg-block" onclick="ChatApp.toggleSidebar()" title="Toggle Sidebar">
+                        <i class="bi bi-layout-sidebar"></i>
+                    </button>
+                    <div class="pv-chat-header-avatar" id="chatHeaderAvatar" onclick="ChatApp.toggleInfo()" style="cursor:pointer;"></div>
+                    <div class="pv-chat-header-info" onclick="ChatApp.toggleInfo()" style="cursor:pointer;">
+                        <div class="pv-chat-header-name" id="chatHeaderName"></div>
+                        <div class="pv-chat-header-members" id="chatHeaderMembers"></div>
+                    </div>
+                </div>
+                <div class="pv-chat-messages" id="chatMessages"></div>
+                <div class="pv-chat-input-area" id="chatInputArea">
+                    <div class="pv-mention-popup" id="mentionPopup"></div>
+                    <div class="pv-chat-file-preview" id="chatFilePreview" style="display: none;">
+                        <div class="pv-file-preview-inner">
+                            <i class="bi bi-file-earmark"></i>
+                            <span id="chatFileName"></span>
+                            <button type="button" class="pv-file-remove" onclick="ChatApp.clearFile()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="pv-chat-input-row">
+                        <label class="pv-chat-attach-btn" for="chatFileInput" title="Attach file">
+                            <i class="bi bi-paperclip"></i>
+                        </label>
+                        <input type="file" id="chatFileInput" style="display:none;" onchange="ChatApp.handleFile(this)">
+                        <textarea id="chatInput" class="pv-chat-textarea" placeholder="Type a message... Use @ to mention" rows="1"></textarea>
+                        <button class="pv-chat-send-btn" id="chatSendBtn" onclick="ChatApp.sendMessage()">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div> <!-- end pv-chat-input-row -->
+                </div> <!-- end pv-chat-input-area -->
+            </div> <!-- end pv-chat-active -->
+        </div> <!-- end pv-chat-main -->
+
+        <!-- Right: Room Info Sidebar -->
+        <div class="pv-chat-info-sidebar" id="chatInfoSidebar">
+                <div class="pv-chat-info-header">
+                    <button class="btn p-0 text-white me-3" onclick="ChatApp.toggleInfo()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                    <span class="fw-bold">Group Info</span>
+                </div>
+                <div class="pv-chat-info-body">
+                    <div class="pv-info-hero text-center p-4">
+                        <div id="chatInfoAvatarFull" class="pv-room-avatar-xl mx-auto mb-3"></div>
+                        <h4 id="chatInfoNameFull" class="fw-bold mb-1"></h4>
+                        <div id="chatInfoTypeFull" class="text-muted-custom small"></div>
+                    </div>
+                    <div class="pv-info-section">
+                        <div class="pv-info-label p-3 pb-2 text-primary fw-bold small">PARTICIPANTS</div>
+                        <div id="chatInfoMemberListFull" class="pv-info-member-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Conversation Modal -->
+<div class="modal fade" id="newConvoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--pv-radius);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="pv-form-title fs-5 mb-0">
+                    <i class="bi bi-chat-dots me-2"></i>New Conversation
+                </h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/chat/create/">
+                {% csrf_token %}
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="pv-label mb-2">Topic / Subject</label>
+                        <input type="text" name="name" class="form-control pv-input"
+                               placeholder="e.g. Question about project deadline..." required>
+                    </div>
+                    <p class="text-muted-custom small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        All administrators will be added to this conversation automatically.
+                    </p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 justify-content-center">
+                    <button type="submit" class="btn pv-btn-primary px-5">
+                        <i class="bi bi-send me-2"></i>Start Conversation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CHAT_CONFIG = {
+        currentUserId: {{ current_user_id }},
+        userRole: '{{ user_role }}',
+        isAdmin: false,
+        csrfToken: '{{ csrf_token }}',
+        apiBase: '/chat/api',
+    };
+</script>
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}
