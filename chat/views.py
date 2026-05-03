@@ -78,13 +78,13 @@ def direct_chat_view(request, user_id):
         return redirect('/dashboard/chat/' if request.user.is_staff else '/chat/')
     
     # Backend: Check if a private conversation already exists between these two people
-    room = ChatRoom.objects.filter(is_direct=True).filter(members=request.user).filter(members=target_user).first()
+    room = ChatRoom.objects.filter(room_type='DIRECT').filter(members=request.user).filter(members=target_user).first()
     
     # Backend: If no room exists, create a new one automatically
     if not room:
         room = ChatRoom.objects.create(
             name=f"{request.user.username} & {target_user.username}",
-            is_direct=True, # UX: Mark as private
+            room_type='DIRECT', # UX: Mark as private
             created_by=request.user
         )
         room.members.add(request.user, target_user)
