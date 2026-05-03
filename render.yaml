@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: projectview
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn projectview.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: projectview-db
+          property: connectionString
+
+databases:
+  - name: projectview-db
+    plan: free
