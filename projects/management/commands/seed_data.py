@@ -49,6 +49,16 @@ class Command(BaseCommand):
             UserProfile.objects.get_or_create(user=user2, defaults={'role': 'employee'})
             self.stdout.write(self.style.SUCCESS('  Created user2 (user2 / user123)'))
 
+        hr_admin, created = User.objects.get_or_create(
+            username='hr_admin',
+            defaults={'email': 'hr@projectview.io', 'is_staff': True}
+        )
+        if created:
+            hr_admin.set_password('hr_password123')
+            hr_admin.save()
+            UserProfile.objects.get_or_create(user=hr_admin, defaults={'role': 'hr'})
+            self.stdout.write(self.style.SUCCESS("  Created hr_admin (hr_admin / hr_password123)"))
+
         if Project.objects.exists():
             self.stdout.write('  Projects already seeded. Skipping.')
             return
