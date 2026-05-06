@@ -13,12 +13,7 @@ from django.http import JsonResponse
 
 def login_view(request):
     if request.user.is_authenticated:
-        profile = getattr(request.user, 'profile', None)
-        if profile and not profile.has_seen_onboarding:
-            return redirect('/intro/')
-        if request.user.is_staff:
-            return redirect('/dashboard/')
-        return redirect('/chat/')
+        return redirect('/intro/')
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -26,12 +21,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            profile = getattr(user, 'profile', None)
-            if profile and not profile.has_seen_onboarding:
-                return redirect('/intro/')
-            if user.is_staff:
-                return redirect('/dashboard/')
-            return redirect('/chat/')
+            return redirect('/intro/')
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'accounts/login.html')
@@ -45,7 +35,10 @@ def logout_view(request):
 @never_cache
 @login_required
 def intro_view(request):
-    return render(request, 'intro.html')
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else 'employee'
+    if request.user.is_staff: role = 'manager'
+    return render(request, 'intro.html', {'user_role': role})
 
 
 from .decorators import hr_required, manager_or_hr_required

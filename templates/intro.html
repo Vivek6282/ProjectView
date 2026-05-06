@@ -149,10 +149,13 @@
         </p>
 
         <div class="d-flex justify-content-center gap-3 mb-5">
-            <button onclick="completeOnboarding('/projects/')" class="btn pv-btn-primary px-5 py-3 fw-bold shadow-lg">Enter Workspace</button>
-            {% if user.is_staff %}
-                <button onclick="completeOnboarding('/dashboard/')" class="btn pv-btn-outline px-5 py-3 fw-bold admin-portal-btn">Admin Portal</button>
+            {% if user_role == 'manager' or user_role == 'hr' %}
+                <button onclick="completeOnboarding('/dashboard/')" class="btn pv-btn-primary px-5 py-3 fw-bold shadow-lg">Enter Dashboard</button>
+            {% else %}
+                <button onclick="completeOnboarding('/projects/')" class="btn pv-btn-primary px-5 py-3 fw-bold shadow-lg">Enter Workspace</button>
             {% endif %}
+            
+            <a href="/chat/" onclick="completeOnboarding('/chat/')" class="btn pv-btn-outline px-5 py-3 fw-bold admin-portal-btn">Quick Messages</a>
         </div>
 
         <script>
