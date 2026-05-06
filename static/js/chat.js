@@ -273,8 +273,6 @@ const ChatApp = {
         // Feature: Security & Admin Tools. Add the "Delete Group" button only for authorized users.
         const existingActions = document.getElementById('chatInfoActions');
         if (existingActions) existingActions.remove(); // Clean up old buttons
-
-        const isDirect = data.room_type === 'DIRECT';
         const isCreator = data.created_by_id === this.config.currentUserId;
         const isAdmin = this.config.userRole === 'manager' || this.config.userRole === 'hr';
         
