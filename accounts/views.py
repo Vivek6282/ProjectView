@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .forms import UserCreateForm, MessageForm
@@ -12,9 +13,11 @@ from django.http import JsonResponse
 
 def login_view(request):
     if request.user.is_authenticated:
+        if not request.user.profile.has_seen_onboarding:
+            return redirect('/intro/')
         if request.user.is_staff:
             return redirect('/dashboard/')
-        return redirect('/intro/')
+        return redirect('/chat/')
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -22,9 +25,11 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            if not user.profile.has_seen_onboarding:
+                return redirect('/intro/')
             if user.is_staff:
                 return redirect('/dashboard/')
-            return redirect('/intro/')
+            return redirect('/chat/')
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'accounts/login.html')
@@ -105,4 +110,17 @@ def acknowledge_message(request, message_id):
         msg.is_read = True
         msg.save()
         return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'}, status=400)
+@never_cache
+@login_required
+@require_POST
+def update_profile_flag(request):
+    flag = request.POST.get('flag')
+    if flag == 'has_seen_onboarding':
+        request.user.profile.has_seen_onboarding = True
+        request.user.profile.save()
+        return JsonResponse({'status': 'success'})
+    elif flag == 'has_seen_tutorial':
+        request.user.profile.has_seen_tutorial = True
+        request.user.profile.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid flag'}, status=400)

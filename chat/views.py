@@ -22,6 +22,10 @@ from .forms import ChatRoomForm
 @never_cache # UX: Ensure the page always shows fresh data (no old cached copies)
 @staff_member_required # Security: Only allow users with staff/admin status
 def admin_chat_hub(request):
+    # Security: Ensure they've seen the onboarding first
+    if not request.user.profile.has_seen_onboarding:
+        return redirect('/intro/')
+
     # Backend: Find all chat rooms where the current admin is a member
     rooms = ChatRoom.objects.filter(members=request.user).distinct()
     room_data = []
@@ -103,6 +107,10 @@ def direct_chat_view(request, user_id):
 @never_cache
 @login_required
 def employee_chat_hub(request):
+    # Security: Ensure they've seen the onboarding first
+    if not request.user.profile.has_seen_onboarding:
+        return redirect('/intro/')
+
     # Backend: Get all rooms the employee is part of
     rooms = ChatRoom.objects.filter(members=request.user).distinct()
     room_data = []

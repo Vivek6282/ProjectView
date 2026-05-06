@@ -1528,3 +1528,93 @@ body,
 [data-theme="dark"] .pv-badge-hr { background: rgba(155, 89, 182, 0.2); }
 [data-theme="dark"] .pv-badge-manager { background: rgba(44, 130, 201, 0.2); }
 [data-theme="dark"] .pv-badge-employee { background: rgba(39, 174, 96, 0.2); }
+
+/* Admin Portal Button Contrast Fixes */
+.admin-portal-btn {
+    font-weight: 600;
+    transition: all var(--pv-transition);
+}
+
+[data-theme="light"] .admin-portal-btn {
+    color: #0d6efd !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+}
+
+[data-theme="light"] .admin-portal-btn:hover {
+    background-color: #e9ecef !important;
+    color: #0056b3 !important;
+}
+
+[data-theme="dark"] .admin-portal-btn {
+    color: var(--pv-text);
+    background-color: var(--pv-bg-alt);
+    border: 1px solid var(--pv-border);
+}
+
+/* Absolute Cinema Welcome Effect */
+.pv-cinema-welcome {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pv-cinema-welcome.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.pv-cinema-text {
+    font-size: 4rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+    text-align: center;
+    transform: scale(0.9);
+    filter: blur(10px);
+    transition: transform 1.2s ease-out, filter 1.2s ease-out;
+}
+
+.pv-cinema-welcome.active .pv-cinema-text {
+    transform: scale(1);
+    filter: blur(0);
+}
+
+/* Tutorial Overlay */
+.pv-tutorial-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.pv-tutorial-card {
+    background: var(--pv-bg-card);
+    border-radius: 2rem;
+    padding: 3rem;
+    max-width: 600px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: slide-up-fade 0.5s ease-out;
+}
+
+.pv-tutorial-step {
+    display: none;
+}
+
+.pv-tutorial-step.active {
+    display: block;
+}

@@ -10,4 +10,5 @@ urlpatterns = [
     path('dashboard/users/<int:user_id>/toggle/', views.user_toggle_active, name='user_toggle'),
     path('dashboard/users/<int:user_id>/message/', views.send_message, name='send_message'),
     path('messages/<int:message_id>/acknowledge/', views.acknowledge_message, name='acknowledge_message'),
+    path('api/profile/flag/', views.update_profile_flag, name='update_profile_flag'),
 ]

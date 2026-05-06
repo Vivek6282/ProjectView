@@ -395,6 +395,9 @@ const ChatApp = {
             : '';
 
         // --- Step 10: Assemble the final HTML Bubble ---
+        const editedAt = msg.edited_at ? new Date(msg.edited_at).getTime() : 0;
+        const showEdited = msg.is_edited && (Date.now() - editedAt < 300000);
+
         wrapper.innerHTML = `
             ${avatarHtml}
             <div class="pv-msg-bubble">
@@ -407,7 +410,7 @@ const ChatApp = {
                 ${attachHtml}
                 <div class="pv-msg-time">
                     ${time}
-                    ${isEdited ? '<span class="pv-msg-edited">(edited)</span>' : ''}
+                    <span class="pv-msg-edited" data-edited-at="${editedAt}" style="display: ${showEdited ? 'inline' : 'none'}">(edited)</span>
                 </div>
             </div>
         `;
@@ -721,6 +724,20 @@ const ChatApp = {
             }
         })
         .catch(() => {}); // Silent failure (it will just try again next time)
+
+        // UI UX: Refresh existing (edited) tags based on current time
+        this.refreshEditedTags();
+    },
+
+    refreshEditedTags() {
+        const now = Date.now();
+        document.querySelectorAll('.pv-msg-edited').forEach(el => {
+            const editedAt = parseInt(el.dataset.editedAt);
+            if (editedAt > 0) {
+                const isFresh = (now - editedAt) < 300000;
+                el.style.display = isFresh ? 'inline' : 'none';
+            }
+        });
     },
 
     // --- Poll Rooms: Updates the sidebar with new data every 10s ---
