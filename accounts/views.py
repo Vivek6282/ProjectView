@@ -13,7 +13,8 @@ from django.http import JsonResponse
 
 def login_view(request):
     if request.user.is_authenticated:
-        if not request.user.profile.has_seen_onboarding:
+        profile = getattr(request.user, 'profile', None)
+        if profile and not profile.has_seen_onboarding:
             return redirect('/intro/')
         if request.user.is_staff:
             return redirect('/dashboard/')
@@ -25,7 +26,8 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            if not user.profile.has_seen_onboarding:
+            profile = getattr(user, 'profile', None)
+            if profile and not profile.has_seen_onboarding:
                 return redirect('/intro/')
             if user.is_staff:
                 return redirect('/dashboard/')

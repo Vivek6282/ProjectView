@@ -23,7 +23,8 @@ from .forms import ChatRoomForm
 @staff_member_required # Security: Only allow users with staff/admin status
 def admin_chat_hub(request):
     # Security: Ensure they've seen the onboarding first
-    if not request.user.profile.has_seen_onboarding:
+    profile = getattr(request.user, 'profile', None)
+    if profile and not profile.has_seen_onboarding:
         return redirect('/intro/')
 
     # Backend: Find all chat rooms where the current admin is a member
@@ -108,7 +109,8 @@ def direct_chat_view(request, user_id):
 @login_required
 def employee_chat_hub(request):
     # Security: Ensure they've seen the onboarding first
-    if not request.user.profile.has_seen_onboarding:
+    profile = getattr(request.user, 'profile', None)
+    if profile and not profile.has_seen_onboarding:
         return redirect('/intro/')
 
     # Backend: Get all rooms the employee is part of
