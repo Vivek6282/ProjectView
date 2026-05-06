@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .forms import UserCreateForm, MessageForm
-from .models import SystemMessage
+from .models import SystemMessage, UserProfile
 from django.http import JsonResponse
 
 
