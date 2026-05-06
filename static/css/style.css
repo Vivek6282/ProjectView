@@ -750,6 +750,15 @@ body {
     transition: transform 300ms ease;
 }
 
+@media (max-width: 991.98px) {
+    .pv-sidebar {
+        transform: translateX(-100%);
+    }
+    .pv-sidebar.open {
+        transform: translateX(0);
+    }
+}
+
 .pv-sidebar-brand {
     padding: 1.5rem 1.25rem;
     font-weight: 800;
@@ -819,6 +828,14 @@ body {
     margin-left: var(--pv-sidebar-width);
     min-height: 100vh;
     transition: margin-left 300ms ease;
+    padding: 0;
+}
+
+@media (max-width: 991.98px) {
+    .pv-dashboard-content,
+    .pv-main {
+        margin-left: 0 !important;
+    }
 }
 
 .pv-topbar,
@@ -827,13 +844,20 @@ body {
     background: rgba(245, 243, 239, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--pv-border-light);
-    padding: 0 2rem;
+    padding: 0 1.5rem;
     display: flex;
     align-items: center;
     position: sticky;
     top: 0;
     z-index: 1020;
     margin-left: 0;
+}
+
+@media (max-width: 991.98px) {
+    .pv-topbar,
+    .pv-navbar {
+        padding: 0 1rem;
+    }
 }
 
 .pv-topbar-title {
