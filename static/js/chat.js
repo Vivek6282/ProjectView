@@ -274,9 +274,12 @@ const ChatApp = {
         const existingActions = document.getElementById('chatInfoActions');
         if (existingActions) existingActions.remove(); // Clean up old buttons
 
-        // Permission Check: User must be the creator AND a Manager or HR
+        const isDirect = data.room_type === 'DIRECT';
         const isCreator = data.created_by_id === this.config.currentUserId;
-        const canDelete = !isDirect && isCreator && (this.config.userRole === 'manager' || this.config.userRole === 'hr');
+        const isAdmin = this.config.userRole === 'manager' || this.config.userRole === 'hr';
+        
+        // UI Logic: Allow admins to delete ANY conversation, or creator to delete their own group
+        const canDelete = isAdmin || (!isDirect && isCreator);
 
         if (canDelete) {
             const actionSection = document.createElement('div');
