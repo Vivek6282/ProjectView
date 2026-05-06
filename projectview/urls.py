@@ -5,9 +5,11 @@ from django.conf.urls.static import static
 
 from django.views.generic import RedirectView
 
+from django.views.decorators.cache import never_cache
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/login/')),
+    path('', never_cache(RedirectView.as_view(url='/login/'))),
     path('', include('accounts.urls')),
     path('projects/', include('projects.urls')),
     path('dashboard/', include('dashboard.urls')),

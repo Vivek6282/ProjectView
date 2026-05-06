@@ -29,6 +29,7 @@ def login_view(request):
 
 
 def logout_view(request):
+    request.session.flush() # Complete wipe of browser memory for this site
     logout(request)
     return redirect('/login/')
 
