@@ -40,10 +40,14 @@ def admin_chat_hub(request):
             'unread_count': room.unread_count_for(request.user),
         })
     # UI UX: Render the admin dashboard template with the prepared room data
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else 'employee'
+    if request.user.is_staff: role = 'manager'
+    
     return render(request, 'dashboard/chat.html', {
         'room_data': room_data,
         'current_user_id': request.user.id,
-        'user_role': getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee',
+        'user_role': role,
         'is_admin': True,
     })
 
@@ -126,10 +130,14 @@ def employee_chat_hub(request):
             'unread_count': room.unread_count_for(request.user),
         })
     # UI UX: Render the employee-specific chat interface
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else 'employee'
+    if request.user.is_staff: role = 'manager'
+    
     return render(request, 'chat/employee_chat.html', {
         'room_data': room_data,
         'current_user_id': request.user.id,
-        'user_role': getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee',
+        'user_role': role,
         'is_admin': False,
     })
 
