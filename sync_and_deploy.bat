@@ -21,7 +21,7 @@ git add .
 echo.
 echo [3/3] Committing and Pushing to Render...
 git commit -m "Implement cinematic welcome, role-based tutorials, and mandatory onboarding"
-git push
+git push -u origin HEAD
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ERROR: Git push failed. Please check your internet or Render credentials.
