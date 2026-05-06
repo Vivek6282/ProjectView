@@ -11,6 +11,7 @@ from .models import SystemMessage, UserProfile
 from django.http import JsonResponse
 
 
+@never_cache
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('/intro/')
