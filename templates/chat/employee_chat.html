@@ -104,7 +104,7 @@
                         </label>
                         <input type="file" id="chatFileInput" style="display:none;" onchange="ChatApp.handleFile(this)">
                         <textarea id="chatInput" class="pv-chat-textarea" placeholder="Type a message... Use @ to mention" rows="1"></textarea>
-                        <button class="pv-chat-send-btn" id="chatSendBtn" onclick="ChatApp.sendMessage()">
+                        <button class="pv-chat-send-btn" id="chatSendBtn">
                             <i class="bi bi-send-fill"></i>
                         </button>
                     </div> <!-- end pv-chat-input-row -->
@@ -175,7 +175,7 @@
         userRole: '{{ user_role }}',
         isAdmin: false,
         csrfToken: '{{ csrf_token }}',
-        apiBase: '/chat/api',
+        apiBase: '/chat/api/',
     };
 </script>
 <script src="{% static 'js/chat.js' %}"></script>

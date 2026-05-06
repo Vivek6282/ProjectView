@@ -115,7 +115,7 @@ const ChatApp = {
         if (this.messagesEl) this.messagesEl.innerHTML = '';
 
         // Backend API Call: Fetch room info and message history
-        fetch(`${this.config.apiBase}/${roomId}/messages/`, {
+        fetch(`${this.config.apiBase}${roomId}/messages/`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -302,8 +302,8 @@ const ChatApp = {
         // UI/UX: As requested, we removed the confirmation alert for "instant" deletion effect.
         // This makes the admin experience feel faster and more powerful.
         
-        // Backend API Call: Tell the server to delete this room from the database
-        fetch(`${this.config.apiBase}/${roomId}/delete/`, {
+        // Backend API Call: Completely remove the room from the database
+        fetch(`${this.config.apiBase}${roomId}/delete/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': this.config.csrfToken } // Security: Include CSRF token for protection
         })
@@ -707,8 +707,8 @@ const ChatApp = {
         // Feature: Only poll if we are actually in a room
         if (!this.currentRoomId) return;
 
-        // Backend API Call: Ask "Are there any messages NEWER than the last one I saw?"
-        fetch(`${this.config.apiBase}/${this.currentRoomId}/poll/?after=${this.lastMessageId}`, {
+        // Backend API Call: Get any new messages that arrived after our last local message
+        fetch(`${this.config.apiBase}${this.currentRoomId}/messages/?last_id=${this.lastMessageId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -815,8 +815,17 @@ const ChatApp = {
         const sendBtn = document.getElementById('chatSendBtn');
         if (sendBtn) sendBtn.disabled = true;
 
+        // Backend API Call: Update the read status so the badge disappears
+        fetch(`${this.config.apiBase}${this.currentRoomId}/read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': this.config.csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
         // Backend API Call: Send the message to the server
-        fetch(`${this.config.apiBase}/${this.currentRoomId}/send/`, {
+        fetch(`${this.config.apiBase}${this.currentRoomId}/send/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
