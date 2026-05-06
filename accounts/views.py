@@ -13,9 +13,6 @@ from django.http import JsonResponse
 
 def login_view(request):
     if request.user.is_authenticated:
-        profile = getattr(request.user, 'profile', None)
-        if profile and not profile.has_seen_onboarding:
-            return redirect('/intro/')
         if request.user.is_staff:
             return redirect('/dashboard/')
         return redirect('/chat/')
@@ -26,10 +23,6 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            profile, created = UserProfile.objects.get_or_create(user=user)
-            if not profile.has_seen_onboarding:
-                return redirect('/intro/')
-            
             if user.is_staff:
                 return redirect('/dashboard/')
             return redirect('/chat/')
@@ -117,13 +110,16 @@ def acknowledge_message(request, message_id):
 @login_required
 @require_POST
 def update_profile_flag(request):
+    from .models import UserProfile
     flag = request.POST.get('flag')
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
     if flag == 'has_seen_onboarding':
-        request.user.profile.has_seen_onboarding = True
-        request.user.profile.save()
+        profile.has_seen_onboarding = True
+        profile.save()
         return JsonResponse({'status': 'success'})
     elif flag == 'has_seen_tutorial':
-        request.user.profile.has_seen_tutorial = True
-        request.user.profile.save()
+        profile.has_seen_tutorial = True
+        profile.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'Invalid flag'}, status=400)
