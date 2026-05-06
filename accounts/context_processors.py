@@ -19,6 +19,11 @@ def unread_messages(request):
 
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('manager' if request.user.is_staff else 'employee')
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else 'employee'
+        if request.user.is_staff:
+            role = 'manager'
+            
         return {
             'unread_urgent_messages': urgent_messages,
             'unread_chat_count': unread_chat,

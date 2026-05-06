@@ -814,12 +814,15 @@ body {
     align-items: center;
 }
 
-.pv-dashboard-content {
+.pv-dashboard-content,
+.pv-main {
     margin-left: var(--pv-sidebar-width);
     min-height: 100vh;
+    transition: margin-left 300ms ease;
 }
 
-.pv-topbar {
+.pv-topbar,
+.pv-navbar {
     height: var(--pv-topbar-height);
     background: rgba(245, 243, 239, 0.95);
     backdrop-filter: blur(12px);
@@ -830,6 +833,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 1020;
+    margin-left: 0;
 }
 
 .pv-topbar-title {

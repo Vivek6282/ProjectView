@@ -26,9 +26,10 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            profile = getattr(user, 'profile', None)
-            if profile and not profile.has_seen_onboarding:
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            if not profile.has_seen_onboarding:
                 return redirect('/intro/')
+            
             if user.is_staff:
                 return redirect('/dashboard/')
             return redirect('/chat/')

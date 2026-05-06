@@ -3,14 +3,10 @@
 
 {% block title %}Messages — Project View{% endblock %}
 
+{% block page_title %}Messages{% endblock %}
 {% block content %}
 
 <div class="container-fluid px-3 px-lg-4 py-4">
-    <!-- Floating Sidebar Toggle -->
-    <button class="pv-floating-nav-toggle d-lg-none" onclick="ChatApp.toggleSidebar()" title="Toggle Rooms">
-        <i class="bi bi-layout-sidebar-inset"></i>
-    </button>
-
     <div class="pv-chat-container pv-chat-employee reveal-item" style="--delay: 0.1s">
         <!-- Left: Room List -->
         <div class="pv-chat-sidebar" id="chatSidebar">
