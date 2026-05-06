@@ -445,10 +445,11 @@ def api_delete_room(request, room_id):
     room = get_object_or_404(ChatRoom, id=room_id)
     
     # Permission Logic: Check if the user is authorized to delete
-    # Feature: Must be the original creator AND have a Manager or HR role
+    # Feature: Must be the original creator AND (Manager/HR role OR Staff status)
     is_creator = room.created_by == request.user
-    role = getattr(request.user, 'profile', None).role if hasattr(request.user, 'profile') else 'employee'
-    is_authorized_role = role in ['manager', 'hr']
+    
+    profile = getattr(request.user, 'profile', None)
+    is_authorized_role = (profile and profile.role in ['manager', 'hr']) or request.user.is_staff
     
     # Security: If they don't meet the criteria, block the action
     if not (is_creator and is_authorized_role):
