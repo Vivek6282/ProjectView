@@ -25,7 +25,7 @@ const ChatApp = {
         if (!base.endsWith('/')) base += '/';
         if (path.startsWith('/')) path = path.substring(1);
         return base + path;
-    }
+    },
 
     // --- Initialize the Chat Application ---
     init() {
