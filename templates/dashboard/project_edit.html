@@ -37,6 +37,9 @@
                     <div class="col-md-6">
                         <label for="{{ form.deadline.id_for_label }}" class="form-label pv-label">Final Deadline Date</label>
                         {{ form.deadline }}
+                        {% if form.deadline.errors %}
+                            <div class="text-danger smaller mt-1">{{ form.deadline.errors|striptags }}</div>
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -66,4 +69,16 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deadlineInput = document.querySelector('input[type="date"]');
+        if (deadlineInput) {
+            const today = new Date().toISOString().split('T')[0];
+            deadlineInput.setAttribute('min', today);
+        }
+    });
+</script>
 {% endblock %}
