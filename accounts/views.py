@@ -49,7 +49,21 @@ from .decorators import hr_required, manager_or_hr_required
 @never_cache
 @manager_or_hr_required
 def user_list_view(request):
-    users = User.objects.all().order_by('-date_joined')
+    user_role = getattr(request.user.profile, 'role', 'employee')
+    
+    if request.user.is_superuser:
+        users = User.objects.all()
+    elif user_role == 'hr':
+        # HR can see managers and employees
+        users = User.objects.filter(profile__role__in=['manager', 'employee'])
+    elif user_role == 'manager':
+        # Managers can see employees
+        users = User.objects.filter(profile__role='employee')
+    else:
+        # Fallback for unexpected cases
+        users = User.objects.none()
+        
+    users = users.order_by('-date_joined')
     return render(request, 'dashboard/user_list.html', {'users': users})
 
 

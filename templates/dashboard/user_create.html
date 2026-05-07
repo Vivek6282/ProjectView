@@ -35,6 +35,18 @@
                         <div class="text-red smaller mt-1">{{ form.email.errors|striptags }}</div>
                     {% endif %}
                 </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.role.id_for_label }}" class="form-label pv-label">System Role</label>
+                    {{ form.role }}
+                    {% if form.role.errors %}
+                        <div class="text-red smaller mt-1">{{ form.role.errors|striptags }}</div>
+                    {% endif %}
+                    <div class="text-muted-custom smallest mt-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Employees have standard access. Managers can view/edit projects. HR can manage accounts.
+                    </div>
+                </div>
                 
                 <div class="row mb-4">
                     <div class="col-md-6">

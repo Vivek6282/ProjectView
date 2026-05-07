@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.admin.views.decorators import staff_member_required
+from accounts.decorators import manager_or_hr_required
 from django.views.decorators.cache import never_cache
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def dashboard_view(request):
     today = date.today()
     projects = Project.objects.all()
@@ -24,7 +24,7 @@ def dashboard_view(request):
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def analytics_json(request):
     today = date.today()
     projects = Project.objects.all()

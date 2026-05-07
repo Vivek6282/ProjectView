@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
+from accounts.decorators import manager_or_hr_required
 from django.views.decorators.cache import never_cache
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -74,14 +74,14 @@ def project_detail_view(request, pk):
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def admin_project_list(request):
     projects = Project.objects.all().order_by('-updated_at')
     return render(request, 'dashboard/project_list.html', {'projects': projects})
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def admin_project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -97,7 +97,7 @@ def admin_project_create(request):
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def admin_project_edit(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
@@ -112,7 +112,7 @@ def admin_project_edit(request, pk):
 
 
 @never_cache
-@staff_member_required
+@manager_or_hr_required
 def admin_project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':

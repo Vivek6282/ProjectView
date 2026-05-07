@@ -59,7 +59,8 @@ WSGI_APPLICATION = 'projectview.wsgi.application'
 
 db_config = dj_database_url.config(
     default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-    conn_max_age=600
+    conn_max_age=60,  # Reduced to prevent stale connections with TiDB
+    conn_health_checks=True,  # Proactively check connection health
 )
 
 # If using MySQL with SSL (like TiDB Cloud), adjust for PyMySQL compatibility

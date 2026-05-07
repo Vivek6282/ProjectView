@@ -1,9 +1,10 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import SystemMessage
+from .models import SystemMessage, UserProfile
 
 
 class UserCreateForm(forms.ModelForm):
+    role = forms.ChoiceField(choices=UserProfile.ROLE_CHOICES, widget=forms.Select(attrs={'class': 'form-select pv-input'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control pv-input','placeholder': 'Create password'}))
     password_confirm = forms.CharField(label='Confirm Password', widget=forms.PasswordInput(attrs={'class': 'form-control pv-input','placeholder': 'Confirm password'}))
 
@@ -36,6 +37,10 @@ class UserCreateForm(forms.ModelForm):
         user.set_password(self.cleaned_data['password'])
         if commit:
             user.save()
+            # Create or update profile with the selected role
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.role = self.cleaned_data['role']
+            profile.save()
         return user
 
 
