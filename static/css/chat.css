@@ -423,6 +423,7 @@
     position: relative;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .pv-msg-wrapper.own .pv-msg-bubble {
@@ -475,7 +476,7 @@
 
 .pv-msg-bubble {
     position: relative;
-    max-width: 80%;
+    max-width: 100%;
     padding: 0.6rem 0.9rem;
     border-radius: 12px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);

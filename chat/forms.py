@@ -13,7 +13,7 @@ class ChatRoomForm(forms.ModelForm):
 
     class Meta:
         model = ChatRoom
-        fields = ['name']
+        fields = ['name', 'members']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control pv-input',
