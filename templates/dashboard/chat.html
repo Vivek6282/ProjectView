@@ -139,6 +139,7 @@
         isAdmin: true,
         csrfToken: '{{ csrf_token }}',
         apiBase: '/chat/api',
+        currentUsername: '{{ request.user.username }}',
     };
 </script>
 <script src="{% static 'js/chat.js' %}"></script>

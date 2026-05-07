@@ -410,6 +410,9 @@
 .pv-msg-wrapper.own {
     align-self: flex-end;
     flex-direction: row-reverse;
+    margin-left: auto;
+    width: 100%;
+    justify-content: flex-end;
 }
 
 .pv-msg-wrapper.other {
@@ -477,11 +480,16 @@
 
 .pv-msg-bubble {
     position: relative;
-    padding: 0.6rem 0.9rem;
+    padding: 0.5rem 0.8rem;
     border-radius: 12px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     height: auto;
-    min-height: min-content;
+    width: max-content;
+    min-width: max-content;
+    max-width: 100%;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: top;
 }
 
 .pv-msg-wrapper.own .pv-msg-bubble {

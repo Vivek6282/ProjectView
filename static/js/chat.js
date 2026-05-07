@@ -357,7 +357,9 @@ const ChatApp = {
         }
 
         // --- Step 3: Parse Message Properties ---
-        const isOwn = msg.is_own; // Was it sent by the current user?
+        // UI Logic: We check both the server's 'is_own' flag and a backup username comparison
+        // to ensure own messages always appear on the right side.
+        const isOwn = msg.is_own || (msg.sender_username === this.config.currentUsername);
         const isMentioned = msg.is_mentioned; // Does it contain @[MyName]?
         const isEdited = msg.created_at !== msg.updated_at; // Was the text changed after sending?
         const content = msg.content || '';
