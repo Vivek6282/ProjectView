@@ -207,6 +207,34 @@ body {
     box-shadow: 0 4px 12px rgba(192, 57, 43, 0.25);
 }
 
+.pv-btn-complete {
+    background: var(--pv-green);
+    color: #fff;
+    border: 2px solid var(--pv-green);
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--pv-radius-sm);
+    transition: all var(--pv-transition);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+}
+
+.pv-btn-complete:hover {
+    background: #219150;
+    border-color: #219150;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25);
+}
+
+.pv-completed-indicator {
+    background: var(--pv-green-bg);
+    color: var(--pv-green);
+    border: 1.5px dashed var(--pv-green);
+    border-radius: var(--pv-radius-sm);
+    text-align: center;
+}
+
 .pv-btn-danger-outline {
     background: transparent;
     color: var(--pv-red);

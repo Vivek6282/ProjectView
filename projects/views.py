@@ -10,6 +10,10 @@ from .models import Project
 from .forms import ProjectForm
 
 
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+
+
 @never_cache
 @login_required
 def project_list_view(request):
@@ -120,3 +124,16 @@ def admin_project_delete(request, pk):
         messages.success(request, 'Project deleted.')
         return redirect('/dashboard/projects/')
     return render(request, 'dashboard/project_delete.html', {'project': project})
+
+
+@never_cache
+@login_required
+@require_POST
+def submit_project_complete(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    if project.status != 'Done':
+        project.status = 'Done'
+        project.completed_at = timezone.now()
+        project.save()
+        messages.success(request, f'Project "{project.title}" has been submitted as completed.')
+    return redirect('projects:project_detail', pk=pk)
