@@ -399,110 +399,98 @@
 }
 
 /* ---- Message Bubble ---- */
+/* ---- WhatsApp Style Message Engine ---- */
 .pv-msg-wrapper {
     display: flex;
     gap: 0.5rem;
     max-width: 75%;
     width: fit-content;
+    margin-bottom: 4px;
     animation: pvMsgIn 300ms ease-out;
+    position: relative;
 }
 
 .pv-msg-wrapper.own {
-    align-self: flex-end;
-    flex-direction: row-reverse;
     margin-left: auto;
-    width: 100%;
-    justify-content: flex-end;
+    padding-right: 12px;
 }
 
 .pv-msg-wrapper.other {
-    align-self: flex-start;
+    margin-right: auto;
+    padding-left: 12px;
 }
 
 .pv-msg-bubble {
-    padding: 0.65rem 1rem;
-    border-radius: var(--pv-radius-sm);
-    font-size: 0.88rem;
-    line-height: 1.55;
     position: relative;
+    padding: 6px 12px 20px 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.15);
+    height: auto;
+    width: fit-content;
+    min-width: 80px;
+    max-width: 100%;
     word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
+    word-break: break-word;
+    white-space: normal;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
+/* Own Message (Right Side) */
 .pv-msg-wrapper.own .pv-msg-bubble {
-    background: var(--pv-accent);
-    color: #fff;
-    border-bottom-right-radius: 3px;
+    background-color: #056162 !important; /* WhatsApp Green */
+    color: #ffffff;
+    border-top-right-radius: 0;
+}
+.pv-msg-wrapper.own .pv-msg-bubble::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid #056162;
+    border-bottom: 10px solid transparent;
 }
 
+/* Other Message (Left Side) */
 .pv-msg-wrapper.other .pv-msg-bubble {
-    background: var(--pv-bg-card);
-    color: var(--pv-text);
-    border: 1px solid var(--pv-border-light);
-    border-bottom-left-radius: 3px;
+    background-color: #202c33 !important; /* WhatsApp Dark Grey */
+    color: #ffffff;
+    border-top-left-radius: 0;
 }
-
-.pv-msg-wrapper.mentioned .pv-msg-bubble {
-    border-left: 3px solid var(--pv-orange);
-}
-
-.pv-msg-sender {
-    font-size: 0.72rem;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
-    color: var(--pv-accent);
-}
-
-.pv-msg-wrapper.own .pv-msg-sender {
-    color: rgba(255, 255, 255, 0.75);
+.pv-msg-wrapper.other .pv-msg-bubble::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-right: 10px solid #202c33;
+    border-bottom: 10px solid transparent;
 }
 
 .pv-msg-time {
-    font-size: 0.65rem;
-    margin-top: 0.3rem;
-    opacity: 0.6;
-    text-align: right;
+    position: absolute;
+    bottom: 3px;
+    right: 7px;
+    font-size: 0.62rem;
+    opacity: 0.5;
+    color: inherit;
+    white-space: nowrap;
 }
 
-.pv-msg-wrapper.own .pv-msg-time {
-    color: rgba(255, 255, 255, 0.7);
+.pv-msg-sender {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #25d366;
+    margin-bottom: 2px;
 }
 
-.pv-msg-wrapper {
-    position: relative;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.pv-msg-wrapper:hover {
-    transform: translateY(-2px);
-}
-
-.pv-msg-bubble {
-    position: relative;
-    padding: 0.5rem 0.8rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    height: auto;
-    width: max-content;
-    min-width: max-content;
-    max-width: 100%;
-    flex-shrink: 0;
-    display: inline-block;
-    vertical-align: top;
-}
-
-.pv-msg-wrapper.own .pv-msg-bubble {
-    background: var(--pv-accent);
-    color: #fff;
-    border-bottom-right-radius: 2px;
-}
-
-.pv-msg-wrapper.other .pv-msg-bubble {
-    background: var(--pv-bg-card);
-    color: var(--pv-text);
-    border: 1px solid var(--pv-border-light);
-    border-bottom-left-radius: 2px;
+.pv-msg-content {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
 }
 
 /* WhatsApp Style Trigger Arrow */
@@ -1585,4 +1573,60 @@
     justify-content: center;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     margin: 0 auto 1rem;
+}
+
+/* ---- Info Sidebar (Group Info Panel) ---- */
+.pv-chat-info-sidebar {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--pv-bg-card);
+    border-left: 1px solid var(--pv-border-light);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.pv-chat-container.info-open .pv-chat-info-sidebar {
+    width: 320px;
+    min-width: 320px;
+}
+
+.pv-chat-info-header {
+    padding: 1rem 1.25rem;
+    background: var(--pv-accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 64px;
+    flex-shrink: 0;
+}
+
+.pv-chat-info-header .btn {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.pv-chat-info-body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.pv-btn-delete-group {
+    border-radius: var(--pv-radius-sm);
+}
+
+@media (max-width: 991.98px) {
+    .pv-chat-container.info-open .pv-chat-info-sidebar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 100%;
+        min-width: 100%;
+        z-index: 50;
+    }
 }

@@ -114,27 +114,26 @@
 
         <!-- Right: Room Info Sidebar -->
         <div class="pv-chat-info-sidebar" id="chatInfoSidebar">
-                <div class="pv-chat-info-header">
-                    <button class="btn p-0 text-white me-3" onclick="ChatApp.toggleInfo()">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                    <span class="fw-bold">Group Info</span>
+            <div class="pv-chat-info-header">
+                <button class="btn p-0 text-white" onclick="ChatApp.toggleInfo()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <span class="fw-bold">Group Info</span>
+            </div>
+            <div class="pv-chat-info-body">
+                <div class="pv-info-hero text-center p-4">
+                    <div id="chatInfoAvatarFull" class="pv-room-avatar-xl"></div>
+                    <h4 id="chatInfoNameFull" class="fw-bold mb-1"></h4>
+                    <div id="chatInfoTypeFull" class="text-muted-custom small"></div>
                 </div>
-                <div class="pv-chat-info-body">
-                    <div class="pv-info-hero text-center p-4">
-                        <div id="chatInfoAvatarFull" class="pv-room-avatar-xl mx-auto mb-3"></div>
-                        <h4 id="chatInfoNameFull" class="fw-bold mb-1"></h4>
-                        <div id="chatInfoTypeFull" class="text-muted-custom small"></div>
-                    </div>
-                    <div class="pv-info-section">
-                        <div class="pv-info-label p-3 pb-2 text-primary fw-bold small">PARTICIPANTS</div>
-                        <div id="chatInfoMemberListFull" class="pv-info-member-list"></div>
-                    </div>
+                <div class="pv-info-section">
+                    <div class="pv-info-label">PARTICIPANTS</div>
+                    <div id="chatInfoMemberListFull" class="pv-info-member-list"></div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div> <!-- end pv-chat-container -->
+</div> <!-- end container-fluid -->
 
 <!-- New Conversation Modal -->
 <div class="modal fade" id="newConvoModal" tabindex="-1" aria-hidden="true">
