@@ -18,6 +18,14 @@ const ChatApp = {
     currentMembers: [],      // The list of people who belong to the current chat room
     lastDateLabel: '',       // Stores the last date divider shown (e.g., "Today") to avoid duplicates
     isInit: false,           // Prevents the chat app from initializing multiple times
+    
+    // --- Safe API Joiner: Prevents double-slash errors by cleaning paths on the fly ---
+    getApiUrl(path) {
+        let base = this.config.apiBase || '';
+        if (!base.endsWith('/')) base += '/';
+        if (path.startsWith('/')) path = path.substring(1);
+        return base + path;
+    }
 
     // --- Initialize the Chat Application ---
     init() {
@@ -115,7 +123,7 @@ const ChatApp = {
         if (this.messagesEl) this.messagesEl.innerHTML = '';
 
         // Backend API Call: Fetch room info and message history
-        fetch(`${this.config.apiBase}${roomId}/messages/`, {
+        fetch(this.getApiUrl(`${roomId}/messages/`), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -301,7 +309,7 @@ const ChatApp = {
         // This makes the admin experience feel faster and more powerful.
         
         // Backend API Call: Completely remove the room from the database
-        fetch(`${this.config.apiBase}${roomId}/delete/`, {
+        fetch(this.getApiUrl(`${roomId}/delete/`), {
             method: 'POST',
             headers: { 'X-CSRFToken': this.config.csrfToken } // Security: Include CSRF token for protection
         })
@@ -549,7 +557,7 @@ const ChatApp = {
         formData.append('content', text);
 
         // Backend API Call: Update the message content in the database
-        fetch(`${this.config.apiBase}/messages/${msgId}/edit/`, {
+        fetch(this.getApiUrl(`messages/${msgId}/edit/`), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
@@ -589,7 +597,7 @@ const ChatApp = {
         if (!confirm('Are you sure you want to delete this message?')) return;
 
         // Backend API Call: Soft delete the message (hides it from others too)
-        fetch(`${this.config.apiBase}/messages/${msgId}/delete/`, {
+        fetch(this.getApiUrl(`messages/${msgId}/delete/`), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
@@ -639,7 +647,7 @@ const ChatApp = {
         modal.show();
 
         // Backend API Call: Fetch all available chat rooms for the list
-        fetch(`${this.config.apiBase}/rooms/`, {
+        fetch(this.getApiUrl('rooms/'), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -663,7 +671,7 @@ const ChatApp = {
         formData.append('room_id', roomId);
 
         // Backend API Call: Copy the message to the new room
-        fetch(`${this.config.apiBase}/messages/${this.forwardingMsgId}/forward/`, {
+        fetch(this.getApiUrl(`messages/${this.forwardingMsgId}/forward/`), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
@@ -706,7 +714,7 @@ const ChatApp = {
         if (!this.currentRoomId) return;
 
         // Backend API Call: Get any new messages that arrived after our last local message
-        fetch(`${this.config.apiBase}${this.currentRoomId}/messages/?last_id=${this.lastMessageId}`, {
+        fetch(this.getApiUrl(`${this.currentRoomId}/messages/?last_id=${this.lastMessageId}`), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -741,10 +749,9 @@ const ChatApp = {
         });
     },
 
-    // --- Poll Rooms: Updates the sidebar with new data every 10s ---
     pollRooms() {
         // Backend API Call: Get a list of all rooms and their unread counts
-        fetch(`${this.config.apiBase}/rooms/`, {
+        fetch(this.getApiUrl('rooms/'), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
@@ -814,7 +821,7 @@ const ChatApp = {
         if (sendBtn) sendBtn.disabled = true;
 
         // Backend API Call: Update the read status so the badge disappears
-        fetch(`${this.config.apiBase}${this.currentRoomId}/read/`, {
+        fetch(this.getApiUrl(`${this.currentRoomId}/read/`), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
@@ -823,7 +830,7 @@ const ChatApp = {
         });
 
         // Backend API Call: Send the message to the server
-        fetch(`${this.config.apiBase}${this.currentRoomId}/send/`, {
+        fetch(this.getApiUrl(`${this.currentRoomId}/send/`), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': this.config.csrfToken,
@@ -931,7 +938,7 @@ const ChatApp = {
         if (!this.currentRoomId) return;
 
         // Backend API Call: Filter users by name within the current room
-        fetch(`${this.config.apiBase}/mentions/?q=${encodeURIComponent(query)}&room_id=${this.currentRoomId}`, {
+        fetch(this.getApiUrl(`mentions/?q=${encodeURIComponent(query)}&room_id=${this.currentRoomId}`), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         })
         .then(r => r.json())
