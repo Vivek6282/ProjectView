@@ -10,9 +10,11 @@
         <h2 class="pv-overline">Global Portfolio</h2>
         <h3 class="fw-bold">Project Inventory</h3>
     </div>
+    {% if user_role == 'manager' %}
     <a href="/dashboard/projects/create/" class="btn pv-btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Create New Project
     </a>
+    {% endif %}
 </div>
 
 <div class="pv-table-card reveal-item" style="--delay: 0.2s">
@@ -41,12 +43,16 @@
                     <td>{{ project.deadline|date:"M d, Y" }}</td>
                     <td class="text-end">
                         <div class="d-flex justify-content-end gap-2">
+                            {% if user_role == 'manager' %}
                             <a href="/dashboard/projects/{{ project.id }}/edit/" class="btn pv-btn-outline p-1 px-2" title="Edit">
                                 <i class="bi bi-pencil-square"></i>
                             </a>
                             <a href="/dashboard/projects/{{ project.id }}/delete/" class="btn pv-btn-danger-outline p-1 px-2" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </a>
+                            {% else %}
+                            <span class="text-muted-custom smaller">View Only</span>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

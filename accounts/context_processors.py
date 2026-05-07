@@ -18,11 +18,9 @@ def unread_messages(request):
             pass
 
         profile = getattr(request.user, 'profile', None)
-        role = profile.role if profile else ('manager' if request.user.is_staff else 'employee')
-        profile = getattr(request.user, 'profile', None)
-        role = profile.role if profile else 'employee'
-        if request.user.is_staff:
-            role = 'manager'
+        # Logic: If they have a profile role (hr or manager), use that first. 
+        # Otherwise, fallback to 'manager' if staff, else 'employee'.
+        role = profile.role if profile and profile.role else ('manager' if request.user.is_staff else 'employee')
             
         return {
             'unread_urgent_messages': urgent_messages,
