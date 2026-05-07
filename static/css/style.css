@@ -235,6 +235,37 @@ body {
     text-align: center;
 }
 
+.pv-asset-card {
+    background: var(--pv-bg-card);
+    border: 1px solid var(--pv-border-light);
+    border-radius: var(--pv-radius-sm);
+    transition: all var(--pv-transition);
+}
+
+.pv-asset-card:hover {
+    border-color: var(--pv-accent);
+    box-shadow: var(--pv-shadow);
+}
+
+.pv-btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: var(--pv-radius-xs);
+    background: var(--pv-bg-alt);
+    color: var(--pv-text-muted);
+    border: none;
+    transition: all var(--pv-transition);
+}
+
+.pv-btn-icon:hover {
+    background: var(--pv-accent-bg);
+    color: var(--pv-accent);
+}
+
 .pv-btn-danger-outline {
     background: transparent;
     color: var(--pv-red);

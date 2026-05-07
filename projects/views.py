@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.db.models import Q
 from datetime import date
-from .models import Project
+from .models import Project, ProjectAsset
 from .forms import ProjectForm
 
 
@@ -137,3 +137,44 @@ def submit_project_complete(request, pk):
         project.save()
         messages.success(request, f'Project "{project.title}" has been submitted as completed.')
     return redirect('projects:project_detail', pk=pk)
+
+
+@never_cache
+@login_required
+@require_POST
+def upload_project_asset(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    files = request.FILES.getlist('assets')
+    
+    if not files:
+        messages.error(request, 'No files selected for upload.')
+        return redirect('projects:project_detail', pk=pk)
+        
+    for f in files:
+        ProjectAsset.objects.create(
+            project=project,
+            file=f,
+            name=f.name,
+            uploaded_by=request.user
+        )
+        
+    messages.success(request, f'Successfully uploaded {len(files)} file(s).')
+    return redirect('projects:project_detail', pk=pk)
+
+
+@never_cache
+@login_required
+@require_POST
+def delete_project_asset(request, asset_id):
+    asset = get_object_or_404(ProjectAsset, id=asset_id)
+    project_id = asset.project.id
+    
+    # Check permissions (only uploader or admin can delete)
+    if asset.uploaded_by == request.user or request.user.is_staff:
+        asset.file.delete() # Remove file from storage
+        asset.delete() # Remove record from DB
+        messages.success(request, 'Asset deleted successfully.')
+    else:
+        messages.error(request, 'Unauthorized to delete this asset.')
+        
+    return redirect('projects:project_detail', pk=project_id)

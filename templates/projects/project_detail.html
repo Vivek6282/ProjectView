@@ -40,6 +40,66 @@
                         </div>
                     </div>
                 {% endif %}
+
+                <!-- Project Assets Section -->
+                <div class="mt-5 pt-4 border-top reveal-item" style="--delay: 0.4s">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="pv-overline mb-0">Project Assets & Deliverables</div>
+                        {% if project.status != 'Done' %}
+                        <button class="btn btn-sm pv-btn-primary" onclick="document.getElementById('assetUploadInput').click()">
+                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload Files
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <form id="assetUploadForm" method="post" action="{% url 'projects:project_upload_asset' project.id %}" enctype="multipart/form-data" class="d-none">
+                        {% csrf_token %}
+                        <input type="file" name="assets" id="assetUploadInput" multiple onchange="this.form.submit()">
+                    </form>
+
+                    <div class="pv-asset-grid row g-3">
+                        {% for asset in project.assets.all %}
+                        <div class="col-md-6">
+                            <div class="pv-asset-card p-3 d-flex align-items-center gap-3">
+                                <div class="pv-asset-icon">
+                                    {% if asset.is_image %}
+                                        <i class="bi bi-file-earmark-image fs-4 text-primary"></i>
+                                    {% elif '.pdf' in asset.name|lower %}
+                                        <i class="bi bi-file-earmark-pdf fs-4 text-danger"></i>
+                                    {% elif '.zip' in asset.name|lower or '.rar' in asset.name|lower %}
+                                        <i class="bi bi-file-earmark-zip fs-4 text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="pv-asset-info flex-grow-1 overflow-hidden">
+                                    <div class="pv-asset-name text-truncate fw-bold small" title="{{ asset.name }}">{{ asset.name }}</div>
+                                    <div class="pv-asset-meta smaller text-muted-custom">
+                                        Uploaded by {{ asset.uploaded_by.username }}
+                                    </div>
+                                </div>
+                                <div class="pv-asset-actions d-flex gap-2">
+                                    <a href="{{ asset.file.url }}" class="btn btn-sm pv-btn-icon" download title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    {% if asset.uploaded_by == user or user.is_staff %}
+                                    <form method="post" action="{% url 'projects:project_delete_asset' asset.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm pv-btn-icon text-danger" onclick="return confirm('Delete this asset?')" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-4 opacity-50 italic">
+                            No assets uploaded yet.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
 

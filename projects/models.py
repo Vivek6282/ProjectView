@@ -58,3 +58,26 @@ class Project(models.Model):
         elif self.status != 'Done':
             self.completed_at = None
         super().save(*args, **kwargs)
+
+
+class ProjectAsset(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='assets')
+    file = models.FileField(upload_to='project_assets/%Y/%m/%d/')
+    name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.project.title}"
+
+    @property
+    def file_extension(self):
+        import os
+        return os.path.splitext(self.file.name)[1].lower()
+
+    @property
+    def is_image(self):
+        return self.file_extension in ['.jpg', '.jpeg', '.png', '.gif', '.webp']
