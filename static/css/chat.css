@@ -403,6 +403,7 @@
     display: flex;
     gap: 0.5rem;
     max-width: 75%;
+    width: fit-content;
     animation: pvMsgIn 300ms ease-out;
 }
 
@@ -476,10 +477,11 @@
 
 .pv-msg-bubble {
     position: relative;
-    max-width: 100%;
     padding: 0.6rem 0.9rem;
     border-radius: 12px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    height: auto;
+    min-height: min-content;
 }
 
 .pv-msg-wrapper.own .pv-msg-bubble {
