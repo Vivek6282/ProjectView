@@ -285,7 +285,7 @@ const ChatApp = {
         const isAdmin = this.config.userRole === 'manager' || this.config.userRole === 'hr';
         
         // UI Logic: Allow admins to delete ANY conversation, or creator to delete their own group
-        const canDelete = isAdmin || (!isDirect && isCreator);
+        const canDelete = (isAdmin || this.config.isAdmin) || (!isDirect && isCreator);
 
         if (canDelete) {
             const actionSection = document.createElement('div');

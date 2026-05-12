@@ -197,6 +197,8 @@ def api_messages(request, room_id):
     data = {
         'room_id': room.id,
         'room_name': room.name,
+        'room_type': room.room_type,
+        'created_by_id': room.created_by_id,
         'members': members,
         'messages': [_serialize_message(m, request.user) for m in msgs],
     }
@@ -460,7 +462,7 @@ def api_delete_room(request, room_id):
     is_authorized_role = (profile and profile.role in ['manager', 'hr']) or request.user.is_staff
     
     # Security: If they don't meet the criteria, block the action
-    if not (is_creator and is_authorized_role):
+    if not (is_authorized_role or is_creator):
         return JsonResponse({'error': 'Unauthorized to delete this room'}, status=403)
         
     # Safety: Don't allow deleting private 1-on-1 chats, only groups
