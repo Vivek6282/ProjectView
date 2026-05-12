@@ -154,6 +154,7 @@ def employee_create_room(request):
         # Backend: Create the group room
         room = ChatRoom.objects.create(
             name=name,
+            room_type='GROUP',
             created_by=request.user,
         )
         room.members.add(request.user)
@@ -466,8 +467,8 @@ def api_delete_room(request, room_id):
         return JsonResponse({'error': 'Unauthorized to delete this room'}, status=403)
         
     # Safety: Don't allow deleting private 1-on-1 chats, only groups
-    if room.room_type != 'GROUP':
-        return JsonResponse({'error': 'Only group chats can be deleted'}, status=400)
+    if room.room_type == 'DIRECT':
+        return JsonResponse({'error': 'Direct chats cannot be deleted'}, status=400)
         
     # Backend: Permanently remove the room and all its messages from the database
     room.delete()
