@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.http import JsonResponse, FileResponse, Http404
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count, Subquery, OuterRef
 
 from .models import ChatRoom, ChatMessage, ChatRoomRead
 from .forms import ChatRoomForm
@@ -24,32 +24,76 @@ ALLOWED_ATTACHMENT_EXTENSIONS = {
 }
 
 
+def _get_rooms_with_meta(user):
+    """Fetch rooms with last_message and unread_count using fixed queries."""
+    latest_msg_subquery = Subquery(
+        ChatMessage.objects.filter(room=OuterRef('pk'), is_deleted=False)
+        .order_by('-created_at')
+        .values('id')[:1]
+    )
+    rooms = list(
+        ChatRoom.objects.filter(members=user)
+        .distinct()
+        .select_related('created_by')
+        .annotate(last_msg_id=latest_msg_subquery)
+    )
+    if not rooms:
+        return []
+
+    room_ids = [r.id for r in rooms]
+    last_msg_ids = [r.last_msg_id for r in rooms if r.last_msg_id]
+
+    last_messages = {
+        m.id: m
+        for m in ChatMessage.objects.filter(id__in=last_msg_ids)
+        .select_related('sender', 'sender__profile', 'parent_message')
+        .prefetch_related('mentioned_users')
+    }
+
+    read_receipts = {
+        rr.room_id: rr.last_read_at
+        for rr in ChatRoomRead.objects.filter(user=user, room_id__in=room_ids)
+    }
+
+    unread_filter = Q()
+    for room_id in room_ids:
+        last_read = read_receipts.get(room_id)
+        if last_read:
+            unread_filter |= Q(room_id=room_id, created_at__gt=last_read)
+        else:
+            unread_filter |= Q(room_id=room_id)
+
+    unread_counts_qs = (
+        ChatMessage.objects.filter(is_deleted=False)
+        .exclude(sender=user)
+        .filter(unread_filter)
+        .values('room_id')
+        .annotate(count=Count('id'))
+    )
+    unread_map = {item['room_id']: item['count'] for item in unread_counts_qs}
+
+    results = []
+    for r in rooms:
+        results.append({
+            'room': r,
+            'last_message': last_messages.get(r.last_msg_id),
+            'unread_count': unread_map.get(r.id, 0),
+        })
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Admin Views
 # ---------------------------------------------------------------------------
 
-# --- Admin Chat Hub: The main dashboard for administrators to see all their conversations ---
-@never_cache # UX: Ensure the page always shows fresh data (no old cached copies)
-@staff_member_required # Security: Only allow users with staff/admin status
+@never_cache
+@staff_member_required
 def admin_chat_hub(request):
-    # Security: Ensure they've seen the onboarding first
     profile = getattr(request.user, 'profile', None)
     if profile and not profile.has_seen_onboarding:
         return redirect('/intro/')
 
-    # Backend: Find all chat rooms where the current admin is a member
-    rooms = ChatRoom.objects.filter(members=request.user).distinct()
-    room_data = []
-    for room in rooms:
-        # Backend: Get the last message to show a "preview" in the sidebar
-        last_msg = room.last_message
-        room_data.append({
-            'room': room,
-            'last_message': last_msg,
-            # UX: Calculate how many messages this specific user hasn't read yet
-            'unread_count': room.unread_count_for(request.user),
-        })
-    # UI UX: Render the admin dashboard template with the prepared room data
+    room_data = _get_rooms_with_meta(request.user)
     profile = getattr(request.user, 'profile', None)
     role = profile.role if profile else 'employee'
     if request.user.is_staff: role = 'manager'
@@ -118,28 +162,14 @@ def direct_chat_view(request, user_id):
 # Employee Views
 # ---------------------------------------------------------------------------
 
-# --- Employee Chat Hub: The primary chat interface for regular users ---
 @never_cache
 @login_required
 def employee_chat_hub(request):
-    # Security: Ensure they've seen the onboarding first
     profile = getattr(request.user, 'profile', None)
     if profile and not profile.has_seen_onboarding:
         return redirect('/intro/')
 
-    # Backend: Get all rooms the employee is part of
-    rooms = ChatRoom.objects.filter(members=request.user).distinct()
-    room_data = []
-    for room in rooms:
-        # Backend: Include the last message preview
-        last_msg = room.last_message
-        room_data.append({
-            'room': room,
-            'last_message': last_msg,
-            # UX: Show the unread count dot/badge
-            'unread_count': room.unread_count_for(request.user),
-        })
-    # UI UX: Render the employee-specific chat interface
+    room_data = _get_rooms_with_meta(request.user)
     profile = getattr(request.user, 'profile', None)
     role = profile.role if profile else 'employee'
     if request.user.is_staff: role = 'manager'
@@ -185,13 +215,12 @@ def employee_create_room(request):
 # Shared API Endpoints
 # ---------------------------------------------------------------------------
 
-# --- API Messages: Fetches the message history for a specific room ---
 @never_cache
 @login_required
-@require_GET # Security: Fetching data only (no changes to database)
+@require_GET
 def api_messages(request, room_id):
     room = get_object_or_404(ChatRoom, id=room_id, members=request.user)
-    msgs = room.messages.select_related('sender').prefetch_related('mentioned_users')
+    msgs = room.messages.select_related('sender', 'sender__profile', 'parent_message').prefetch_related('mentioned_users')
 
     ChatRoomRead.objects.update_or_create(
         room=room, user=request.user,
@@ -217,24 +246,20 @@ def api_messages(request, room_id):
 # API V2 (REST-style)
 # ---------------------------------------------------------------------------
 
-# --- API Rooms List: Fetches all available rooms for the sidebar ---
 @never_cache
 @login_required
 @require_GET
 def api_rooms_list(request):
-    # Backend: Get all rooms where the user is a participant
-    rooms = ChatRoom.objects.filter(members=request.user).distinct().select_related('created_by')
+    room_items = _get_rooms_with_meta(request.user)
     data = []
-    for room in rooms:
-        # Backend: Get the most recent message to show a snippet
-        last_msg = room.last_message
+    for item in room_items:
+        room = item['room']
+        last_msg = item['last_message']
         data.append({
             'id': room.id,
             'name': room.name,
             'room_type': room.room_type,
-            # UX: Show how many messages are waiting to be read
-            'unread_count': room.unread_count_for(request.user),
-            # UX: The snippet of text shown in the sidebar list
+            'unread_count': item['unread_count'],
             'last_message': last_msg.content[:60] if last_msg and not last_msg.is_deleted else (
                 '[attachment]' if last_msg and not last_msg.is_deleted else (
                     '[Message deleted]' if last_msg and last_msg.is_deleted else ''
@@ -242,31 +267,36 @@ def api_rooms_list(request):
             ),
             'last_message_time': last_msg.created_at.isoformat() if last_msg else '',
             'last_message_sender': last_msg.sender.username if last_msg else '',
-            'online_status': True, # Feature Placeholder: In the future, this would show if they are active
+            'online_status': True,
         })
     return JsonResponse({'rooms': data})
 
 
-# --- API Room Messages: Used by the infinite scroll to load older messages ---
 @never_cache
 @login_required
 @require_GET
 def api_room_messages(request, room_id):
-    # Backend: Verify membership
     room = get_object_or_404(ChatRoom, id=room_id, members=request.user)
-    # Feature: Pagination. Load 30 messages at a time to keep the website fast.
-    page = int(request.GET.get('page', 1))
+    
+    try:
+        page = int(request.GET.get('page', 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
+
     page_size = 30
     start = (page - 1) * page_size
     end = start + page_size
 
-    # Backend: Get the specific chunk of messages
-    messages = room.messages.all().select_related('sender', 'parent_message').order_by('-created_at')[start:end]
+    messages = (
+        room.messages.all()
+        .select_related('sender', 'sender__profile', 'parent_message')
+        .prefetch_related('mentioned_users')
+        .order_by('-created_at')[start:end]
+    )
     
-    # UI UX: Reverse the list so they appear in chronological order on screen
     serialized = [_serialize_message(m, request.user) for m in reversed(messages)]
-    
-    # API response: Includes whether there are even older messages to fetch later
     is_system_room = getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge')
     return JsonResponse({
         'room_name': room.name,
@@ -423,9 +453,30 @@ def api_mark_read(request, room_id):
 @login_required
 @require_GET
 def api_unread_counts(request):
-    """Get total unread counts across all rooms."""
-    rooms = ChatRoom.objects.filter(members=request.user).distinct()
-    total = sum(room.unread_count_for(request.user) for room in rooms)
+    """Get total unread counts across all rooms using a single aggregate query."""
+    room_ids = list(ChatRoom.objects.filter(members=request.user).values_list('id', flat=True))
+    if not room_ids:
+        return JsonResponse({'total': 0})
+
+    read_receipts = {
+        rr.room_id: rr.last_read_at
+        for rr in ChatRoomRead.objects.filter(user=request.user, room_id__in=room_ids)
+    }
+
+    unread_filter = Q()
+    for room_id in room_ids:
+        last_read = read_receipts.get(room_id)
+        if last_read:
+            unread_filter |= Q(room_id=room_id, created_at__gt=last_read)
+        else:
+            unread_filter |= Q(room_id=room_id)
+
+    total = (
+        ChatMessage.objects.filter(is_deleted=False)
+        .exclude(sender=request.user)
+        .filter(unread_filter)
+        .count()
+    )
     return JsonResponse({'total': total})
 
 
@@ -530,7 +581,7 @@ def api_message_attachment(request, message_id):
 # ---------------------------------------------------------------------------
 
 def _serialize_message(msg, current_user):
-    mentioned_ids = list(msg.mentioned_users.values_list('id', flat=True))
+    mentioned_ids = [u.id for u in msg.mentioned_users.all()]
     
     data = {
         'id': msg.id,

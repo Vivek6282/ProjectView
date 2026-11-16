@@ -115,12 +115,12 @@ def send_message(request, user_id):
 
 @never_cache
 @login_required
+@require_POST
 def acknowledge_message(request, message_id):
-    if request.method == 'POST':
-        msg = get_object_or_404(SystemMessage, id=message_id, recipient=request.user)
-        msg.is_read = True
-        msg.save()
-        return JsonResponse({'status': 'success'})
+    msg = get_object_or_404(SystemMessage, id=message_id, recipient=request.user)
+    msg.is_read = True
+    msg.save()
+    return JsonResponse({'status': 'success'})
 @never_cache
 @login_required
 @require_POST
