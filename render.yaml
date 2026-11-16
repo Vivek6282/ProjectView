@@ -12,4 +12,10 @@ services:
       - key: DEBUG
         value: "False"
       - key: DATABASE_URL
-        sync: false # You will provide this from Aiven
+        sync: false # TiDB Cloud connection string
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: MEDIA_ROOT
+        sync: false
