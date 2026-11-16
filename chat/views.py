@@ -180,25 +180,22 @@ def employee_create_room(request):
 @login_required
 @require_GET # Security: Fetching data only (no changes to database)
 def api_messages(request, room_id):
-    # Backend: Ensure the user is actually a member of the room they are trying to peek into
     room = get_object_or_404(ChatRoom, id=room_id, members=request.user)
-    # Backend: Grab all messages and prepare them for the UI
     msgs = room.messages.select_related('sender').prefetch_related('mentioned_users')
 
-    # UX Feature: Automatically mark the conversation as "Read" when the user opens it
     ChatRoomRead.objects.update_or_create(
         room=room, user=request.user,
         defaults={'last_read_at': timezone.now()}
     )
 
-    # Backend: Prepare a list of all participants to show in the info sidebar
     members = list(room.members.values('id', 'username', 'is_staff'))
+    is_system_room = getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge')
 
-    # API response: Send everything back to the frontend (chat.js) as a JSON object
     data = {
         'room_id': room.id,
         'room_name': room.name,
         'room_type': room.room_type,
+        'is_system': is_system_room,
         'created_by_id': room.created_by_id,
         'members': members,
         'messages': [_serialize_message(m, request.user) for m in msgs],
@@ -260,10 +257,12 @@ def api_room_messages(request, room_id):
     serialized = [_serialize_message(m, request.user) for m in reversed(messages)]
     
     # API response: Includes whether there are even older messages to fetch later
+    is_system_room = getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge')
     return JsonResponse({
         'room_name': room.name,
         'room_id': room.id,
         'room_type': room.room_type,
+        'is_system': is_system_room,
         'created_by_id': room.created_by_id,
         'members': [{'id': m.id, 'username': m.username, 'is_staff': m.is_staff} for m in room.members.all()],
         'messages': serialized,
@@ -449,32 +448,33 @@ def api_direct_room(request, user_id):
     return JsonResponse({'room_id': room.id})
 
 
-# --- API Delete Room: Handles the deletion of a chat group ---
 @never_cache
 @login_required
-@require_POST # Security: Only allow POST requests (not bookmarks or links)
+@require_POST
 def api_delete_room(request, room_id):
-    # Backend: Find the room or show a 404 error if it doesn't exist
     room = get_object_or_404(ChatRoom, id=room_id)
     
-    # Permission Logic: Check if the user is authorized to delete
-    # Feature: Must be the original creator AND (Manager/HR role OR Staff status)
-    is_creator = room.created_by == request.user
-    
+    # Must be a member of the room
+    if not room.members.filter(id=request.user.id).exists():
+        return JsonResponse({'error': 'You must be a member of this room to delete it.'}, status=403)
+        
+    # System rooms can never be deleted
+    if getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge'):
+        return JsonResponse({'error': 'System rooms cannot be deleted.'}, status=400)
+        
+    # Direct chats cannot be deleted
+    if room.room_type == 'DIRECT':
+        return JsonResponse({'error': 'Direct chats cannot be deleted.'}, status=400)
+
+    # Must be room creator or manager/HR/staff
+    is_creator = room.created_by_id == request.user.id
     profile = getattr(request.user, 'profile', None)
     is_authorized_role = (profile and profile.role in ['manager', 'hr']) or request.user.is_staff
     
-    # Security: If they don't meet the criteria, block the action
     if not (is_authorized_role or is_creator):
-        return JsonResponse({'error': 'Unauthorized to delete this room'}, status=403)
+        return JsonResponse({'error': 'Unauthorized to delete this room.'}, status=403)
         
-    # Safety: Don't allow deleting private 1-on-1 chats, only groups
-    if room.room_type == 'DIRECT':
-        return JsonResponse({'error': 'Direct chats cannot be deleted'}, status=400)
-        
-    # Backend: Permanently remove the room and all its messages from the database
     room.delete()
-    # UX: Return a success status to the frontend so it can refresh the screen
     return JsonResponse({'status': 'ok'})
 
 

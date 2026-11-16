@@ -278,14 +278,14 @@ const ChatApp = {
             }).join('');
         }
 
-        // Feature: Security & Admin Tools. Add the "Delete Group" button only for authorized users.
         const existingActions = document.getElementById('chatInfoActions');
-        if (existingActions) existingActions.remove(); // Clean up old buttons
+        if (existingActions) existingActions.remove();
         const isCreator = data.created_by_id === this.config.currentUserId;
         const isAdmin = this.config.userRole === 'manager' || this.config.userRole === 'hr';
+        const isMember = (data.members || []).some(m => m.id === this.config.currentUserId);
+        const isSystem = Boolean(data.is_system);
         
-        // UI Logic: Allow admins to delete ANY conversation, or creator to delete their own group
-        const canDelete = !isDirect && ((isAdmin || this.config.isAdmin) || isCreator);
+        const canDelete = !isDirect && !isSystem && isMember && ((isAdmin || this.config.isAdmin) || isCreator);
 
         if (canDelete) {
             const actionSection = document.createElement('div');
@@ -303,28 +303,20 @@ const ChatApp = {
         }
     },
 
-    // --- Delete Room: Permanently removes a group chat ---
     deleteRoom(roomId) {
-        // UI/UX: As requested, we removed the confirmation alert for "instant" deletion effect.
-        // This makes the admin experience feel faster and more powerful.
-        
-        // Backend API Call: Completely remove the room from the database
         fetch(this.getApiUrl(`${roomId}/delete/`), {
             method: 'POST',
-            headers: { 'X-CSRFToken': this.config.csrfToken } // Security: Include CSRF token for protection
+            headers: { 'X-CSRFToken': this.config.csrfToken }
         })
         .then(r => r.json())
         .then(data => {
-            // If the server says "ok", refresh the page to update the UI
             if (data.status === 'ok') {
                 window.location.reload();
             } else {
-                // If there's an error (e.g., unauthorized), log it to the console
                 console.error(data.error || 'Failed to delete room');
             }
         })
         .catch(err => {
-            // Log any network errors
             console.error('Delete failed:', err);
         });
     },
