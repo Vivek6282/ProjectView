@@ -276,23 +276,25 @@ def api_room_messages(request, room_id):
 @login_required
 @require_POST
 def api_message_send(request, room_id):
-    # Backend: Verify membership
     room = get_object_or_404(ChatRoom, id=room_id, members=request.user)
-    # Backend: Get the text content and the file (if any)
     content = request.POST.get('content', '').strip()
     attachment = request.FILES.get('attachment')
-    parent_id = request.POST.get('parent_id') # Feature: Replying to another message
+    parent_id = request.POST.get('parent_id')
 
-    # UX Check: Prevent sending "nothing"
     if not content and not attachment:
         return JsonResponse({'error': 'Empty message'}, status=400)
 
-    # Backend: Link to the parent message if this is a reply
     parent_msg = None
     if parent_id:
-        parent_msg = ChatMessage.objects.filter(id=parent_id, room=room).first()
+        parent_msg = ChatMessage.objects.filter(
+            id=parent_id,
+            room=room,
+            room__members=request.user,
+            is_deleted=False
+        ).first()
+        if not parent_msg:
+            return JsonResponse({'error': 'Parent message not found in this room.'}, status=400)
 
-    # Backend: Create the message record in the database
     msg = ChatMessage.objects.create(
         room=room,
         sender=request.user,
@@ -301,16 +303,13 @@ def api_message_send(request, room_id):
         attachment_name=attachment.name if attachment else '',
         parent_message=parent_msg
     )
-    # Feature: Auto-scan for @mentions to notify users
     msg.parse_mentions()
 
-    # UX UX: Mark the room as "Read" for the sender immediately
     ChatRoomRead.objects.update_or_create(
         room=room, user=request.user,
         defaults={'last_read_at': timezone.now()}
     )
 
-    # API response: Send the new message details back so the UI can draw the bubble
     return JsonResponse({
         'status': 'ok',
         'message': _serialize_message(msg, request.user),
@@ -322,10 +321,14 @@ def api_message_send(request, room_id):
 @login_required
 @require_POST
 def api_message_edit(request, message_id):
-    # Backend: Find the message. Security: Ensure the user is the one who SENT it.
-    msg = get_object_or_404(ChatMessage, id=message_id, sender=request.user, is_deleted=False)
+    msg = get_object_or_404(
+        ChatMessage,
+        id=message_id,
+        sender=request.user,
+        room__members=request.user,
+        is_deleted=False
+    )
     
-    # Feature: Anti-Regret Limit. Only allow editing within the first 5 minutes.
     if (timezone.now() - msg.created_at).total_seconds() > 300:
         return JsonResponse({'error': 'Messages can only be edited within 5 minutes.'}, status=400)
         
@@ -333,52 +336,51 @@ def api_message_edit(request, message_id):
     if not content:
         return JsonResponse({'error': 'Content required'}, status=400)
     
-    # Backend: Update the database record
     msg.content = content
-    msg.save() # Note: The model's save method will automatically set is_edited to True
-    msg.parse_mentions() # Re-scan for any new @mentions added during the edit
+    msg.save()
+    msg.parse_mentions()
     
-    # API response: Send the updated message back to the UI
     return JsonResponse({
         'status': 'ok',
         'message': _serialize_message(msg, request.user),
     })
 
 
-# --- API Message Delete: Removes a message bubble ---
 @never_cache
 @login_required
 @require_POST
 def api_message_delete(request, message_id):
-    # Backend: Find the message. Security: Ensure the user is the owner.
-    msg = get_object_or_404(ChatMessage, id=message_id, sender=request.user)
-    # Backend Logic: "Soft Delete". We don't actually erase it from the DB, 
-    # we just mark it as deleted so the UI shows "[Message deleted]".
+    msg = get_object_or_404(
+        ChatMessage,
+        id=message_id,
+        sender=request.user,
+        room__members=request.user
+    )
     msg.soft_delete()
     return JsonResponse({'status': 'ok'})
 
 
-# --- API Message Forward: Sends an existing message to a different room ---
 @never_cache
 @login_required
 @require_POST
 def api_message_forward(request, message_id):
-    room_id = request.POST.get('room_id') # UX: Target destination
-    # Backend: Find the original message
-    source_msg = get_object_or_404(ChatMessage, id=message_id, is_deleted=False)
-    # Backend: Ensure the user is allowed to send messages in the target room
+    room_id = request.POST.get('room_id')
+    source_msg = get_object_or_404(
+        ChatMessage,
+        id=message_id,
+        room__members=request.user,
+        is_deleted=False
+    )
     target_room = get_object_or_404(ChatRoom, id=room_id, members=request.user)
     
-    # Backend Logic: Create a BRAND NEW message in the target room with the same content
     new_msg = ChatMessage.objects.create(
         room=target_room,
         sender=request.user,
         content=source_msg.content,
         attachment=source_msg.attachment,
         attachment_name=source_msg.attachment_name,
-        parent_message=source_msg # Logic: Keep a link to where it originally came from
+        parent_message=source_msg
     )
-    # UI UX Detail: Add a tag so people know it wasn't typed fresh
     new_msg.content = f"*[Forwarded]*\n{new_msg.content}"
     new_msg.save()
     
@@ -417,8 +419,8 @@ def api_unread_counts(request):
 def api_typing(request):
     """Send typing indicator (placeholder for real-time)."""
     room_id = request.POST.get('room_id')
-    # In a production app, we would broadcast this via WebSockets.
-    # For polling, we might store this in Redis or a cache.
+    if room_id:
+        get_object_or_404(ChatRoom, id=room_id, members=request.user)
     return JsonResponse({'status': 'ok'})
 
 
