@@ -561,6 +561,10 @@ const ChatApp = {
         })
         .then(r => r.json())
         .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
             if (data.message) {
                 // UI UX: Replace the textarea with the new updated text
                 const contentEl = wrapper.querySelector('.pv-msg-content');
@@ -834,6 +838,11 @@ const ChatApp = {
         })
         .then(r => r.json())
         .then(data => {
+            if (data.error) {
+                alert(data.error);
+                if (sendBtn) sendBtn.disabled = false;
+                return;
+            }
             if (data.message) {
                 // UI UX: Add the new message to the screen instantly for a "fast" feel
                 if (!this.messagesEl.querySelector(`[data-msg-id="${data.message.id}"]`)) {

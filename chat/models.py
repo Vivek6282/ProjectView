@@ -107,7 +107,7 @@ class ChatMessage(models.Model):
         if not self.attachment:
             return False
         ext = self.attachment.name.rsplit('.', 1)[-1].lower()
-        return ext in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg')
+        return ext in ('jpg', 'jpeg', 'png', 'gif', 'webp')
 
 
 class ChatRoomRead(models.Model):

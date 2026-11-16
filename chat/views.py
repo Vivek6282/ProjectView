@@ -1,4 +1,6 @@
+import os
 import re
+import mimetypes
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -6,12 +8,20 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, Http404
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.db.models import Q
 
 from .models import ChatRoom, ChatMessage, ChatRoomRead
 from .forms import ChatRoomForm
+
+MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_ATTACHMENT_EXTENSIONS = {
+    'jpg', 'jpeg', 'png', 'gif', 'webp',
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'txt', 'csv', 'zip', 'rar', '7z'
+}
 
 
 # ---------------------------------------------------------------------------
@@ -283,6 +293,13 @@ def api_message_send(request, room_id):
     if not content and not attachment:
         return JsonResponse({'error': 'Empty message'}, status=400)
 
+    if attachment:
+        if attachment.size > MAX_ATTACHMENT_SIZE:
+            return JsonResponse({'error': 'Attachment exceeds the 10 MB size limit.'}, status=400)
+        ext = attachment.name.rsplit('.', 1)[-1].lower() if '.' in attachment.name else ''
+        if not ext or ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
+            return JsonResponse({'error': f'File type ".{ext}" is not allowed.' if ext else 'Files without extensions are not allowed.'}, status=400)
+
     parent_msg = None
     if parent_id:
         parent_msg = ChatMessage.objects.filter(
@@ -478,40 +495,62 @@ def api_delete_room(request, room_id):
     return JsonResponse({'status': 'ok'})
 
 
+@never_cache
+@login_required
+@require_GET
+def api_message_attachment(request, message_id):
+    msg = get_object_or_404(ChatMessage, id=message_id, is_deleted=False)
+    if not msg.room.members.filter(id=request.user.id).exists():
+        raise PermissionDenied("You do not have access to this attachment.")
+    if not msg.attachment:
+        raise Http404("Attachment not found.")
+
+    try:
+        file_handle = msg.attachment.open('rb')
+    except (FileNotFoundError, ValueError):
+        raise Http404("Attachment file not found on disk.")
+
+    content_type, _ = mimetypes.guess_type(msg.attachment.name)
+    content_type = content_type or 'application/octet-stream'
+
+    response = FileResponse(file_handle, content_type=content_type)
+    response['X-Content-Type-Options'] = 'nosniff'
+
+    filename = msg.attachment_name or os.path.basename(msg.attachment.name)
+    if msg.is_image_attachment:
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+    else:
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-# --- Helper: _serialize_message: Converts a database object into a simple JSON format ---
 def _serialize_message(msg, current_user):
-    # Logic: Get a list of everyone mentioned in this message
     mentioned_ids = list(msg.mentioned_users.values_list('id', flat=True))
     
-    # API Structure: This is exactly what the frontend (chat.js) expects to see
     data = {
         'id': msg.id,
         'sender_id': msg.sender.id,
         'sender_username': msg.sender.username,
-        'sender_is_staff': msg.sender.is_staff, # UX: To show "admin" badges
+        'sender_is_staff': msg.sender.is_staff,
         'sender_role': getattr(msg.sender, 'profile', None).role if hasattr(msg.sender, 'profile') else 'employee',
-        # UX: If deleted, hide the content and show a placeholder instead
         'content': msg.content if not msg.is_deleted else '[Message deleted]',
-        # Logic: Let the frontend know if "I" sent this (for right-side alignment)
         'is_own': msg.sender.id == current_user.id,
         'is_edited': msg.is_edited,
         'is_deleted': msg.is_deleted,
-        # UX: Highlight the message if the current user was @mentioned
         'is_mentioned': current_user.id in mentioned_ids,
-        'created_at': msg.created_at.isoformat(), # Standards: Use ISO format for dates
+        'created_at': msg.created_at.isoformat(),
         'edited_at': msg.edited_at.isoformat() if msg.edited_at else None,
         'parent_id': msg.parent_message_id,
     }
     
-    # Feature: Attachments. If there's a file, provide the download URL and name.
     if not msg.is_deleted and msg.attachment:
-        data['attachment_url'] = msg.attachment.url
-        data['attachment_name'] = msg.attachment_name or msg.attachment.name.split('/')[-1]
-        # UI UX: Let the frontend know if it should draw an <img> or a <a> link
+        data['attachment_url'] = f'/chat/api/messages/{msg.id}/attachment/'
+        data['attachment_name'] = msg.attachment_name or os.path.basename(msg.attachment.name)
         data['is_image'] = msg.is_image_attachment
         
     return data

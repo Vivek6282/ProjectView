@@ -20,4 +20,5 @@ urlpatterns = [
     path('api/messages/<int:message_id>/edit/', views.api_message_edit, name='api_message_edit'),
     path('api/messages/<int:message_id>/delete/', views.api_message_delete, name='api_message_delete'),
     path('api/messages/<int:message_id>/forward/', views.api_message_forward, name='api_message_forward'),
+    path('api/messages/<int:message_id>/attachment/', views.api_message_attachment, name='api_message_attachment'),
 ]

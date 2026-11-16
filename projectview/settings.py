@@ -104,7 +104,8 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+media_root_env = os.environ.get('MEDIA_ROOT')
+MEDIA_ROOT = Path(media_root_env) if media_root_env else (BASE_DIR / 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
