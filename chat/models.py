@@ -13,6 +13,8 @@ class ChatRoom(models.Model):
     
     name = models.CharField(max_length=200)
     room_type = models.CharField(max_length=10, choices=ROOM_TYPES, default='DIRECT')
+    is_system = models.BooleanField(default=False)
+    system_name = models.CharField(max_length=50, null=True, blank=True, unique=True)
     created_by = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='created_chat_rooms'
     )

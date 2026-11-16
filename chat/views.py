@@ -228,7 +228,7 @@ def api_messages(request, room_id):
     )
 
     members = list(room.members.values('id', 'username', 'is_staff'))
-    is_system_room = getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge')
+    is_system_room = room.is_system or bool(room.system_name)
 
     data = {
         'room_id': room.id,
@@ -297,7 +297,7 @@ def api_room_messages(request, room_id):
     )
     
     serialized = [_serialize_message(m, request.user) for m in reversed(messages)]
-    is_system_room = getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge')
+    is_system_room = room.is_system or bool(room.system_name)
     return JsonResponse({
         'room_name': room.name,
         'room_id': room.id,
@@ -527,7 +527,7 @@ def api_delete_room(request, room_id):
         return JsonResponse({'error': 'You must be a member of this room to delete it.'}, status=403)
         
     # System rooms can never be deleted
-    if getattr(room, 'is_system', False) or room.room_type == 'PUBLIC' or room.name in ('General', 'HR-Management Bridge'):
+    if room.is_system or room.system_name:
         return JsonResponse({'error': 'System rooms cannot be deleted.'}, status=400)
         
     # Direct chats cannot be deleted
