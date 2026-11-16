@@ -18,6 +18,10 @@ db.sqlite3
 .env
 .gemini/
 
+# Media & Staticfiles
+media/
+staticfiles/
+
 # OS files
 .DS_Store
 Thumbs.db

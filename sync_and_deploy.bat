@@ -4,9 +4,14 @@ echo Project View — Sync & Deploy Helper
 echo ============================================================
 echo.
 
+if "%~1"=="" (
+    echo ERROR: Commit message is required.
+    echo Usage: sync_and_deploy.bat "Your commit message"
+    exit /b 1
+)
+
 echo [1/3] Applying database migrations...
-uv run manage.py makemigrations accounts
-uv run manage.py migrate accounts
+uv run manage.py migrate
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ERROR: Migrations failed. Please check your TiDB connection.
@@ -20,7 +25,7 @@ git add .
 
 echo.
 echo [3/3] Committing and Pushing to Render...
-git commit -m "Implement cinematic welcome, role-based tutorials, and mandatory onboarding"
+git commit -m "%~1"
 git push -u origin HEAD
 if %ERRORLEVEL% NEQ 0 (
     echo.

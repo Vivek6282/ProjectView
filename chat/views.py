@@ -111,48 +111,38 @@ def admin_chat_hub(request):
 @staff_member_required
 def admin_create_room(request):
     if request.method == 'POST':
-        # Backend: Process the form data submitted by the admin
         form = ChatRoomForm(request.POST, exclude_user=request.user)
         if form.is_valid():
-            # Backend: Save the new room and set the current user as the creator
             room = form.save(commit=False)
             room.created_by = request.user
-            room.room_type = 'GROUP' # UX: Explicitly mark this as a group chat
+            room.room_type = 'GROUP'
             room.save()
-            form.save_m2m() # Backend: Save the list of invited members
-            room.members.add(request.user) # UX: Automatically add the creator to the room
-            # UX: Show a success toast message
+            form.save_m2m()
+            room.members.add(request.user)
             messages.success(request, f'Room "{room.name}" created.')
             return redirect('/dashboard/chat/')
     else:
-        # UI UX: Show an empty form for creating a room
         form = ChatRoomForm(exclude_user=request.user)
     return render(request, 'dashboard/chat_create.html', {'form': form})
 
 
-# --- Direct Chat View: Handles 1-on-1 private messaging ---
 @never_cache
-@login_required # Security: User must be signed in
+@login_required
 def direct_chat_view(request, user_id):
-    # Backend: Get the person you want to chat with
     target_user = get_object_or_404(User, id=user_id)
-    # UX Safety: Don't allow users to start a chat with themselves
     if target_user == request.user:
         return redirect('/dashboard/chat/' if request.user.is_staff else '/chat/')
     
-    # Backend: Check if a private conversation already exists between these two people
     room = ChatRoom.objects.filter(room_type='DIRECT').filter(members=request.user).filter(members=target_user).first()
     
-    # Backend: If no room exists, create a new one automatically
     if not room:
         room = ChatRoom.objects.create(
             name=f"{request.user.username} & {target_user.username}",
-            room_type='DIRECT', # UX: Mark as private
+            room_type='DIRECT',
             created_by=request.user
         )
         room.members.add(request.user, target_user)
         
-    # UI UX: Redirect the user to the appropriate chat hub (Admin or Employee)
     if request.user.is_staff:
         return redirect(f'/dashboard/chat/?room={room.id}')
     return redirect(f'/chat/?room={room.id}')
@@ -182,29 +172,22 @@ def employee_chat_hub(request):
     })
 
 
-# --- Employee Create Room: Allows employees to start a new support chat or group ---
 @never_cache
 @login_required
 def employee_create_room(request):
     if request.method == 'POST':
-        # Backend: Clean up the room name or use a default if empty
         name = request.POST.get('name', '').strip()
         if not name:
             name = f"Chat from {request.user.username}"
-        # Backend: Create the group room
         room = ChatRoom.objects.create(
             name=name,
             room_type='GROUP',
             created_by=request.user,
         )
         room.members.add(request.user)
-        # UX Feature: Automatically invite all Admins/Staff to the conversation 
-        # so they can see the employee's request and help them.
         staff_users = User.objects.filter(is_staff=True, is_active=True)
         room.members.add(*staff_users)
-        # UX: Show a success notification
         messages.success(request, f'Conversation "{room.name}" started.')
-        # UI UX: Redirect back to the correct chat hub
         if request.user.is_staff:
             return redirect('/dashboard/chat/')
         return redirect('/chat/')

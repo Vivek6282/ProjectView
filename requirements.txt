@@ -1,6 +1,6 @@
 django>=5.0,<6.0
 gunicorn
-whitenoise[broccoli]
+whitenoise[brotli]
 dj-database-url
 PyMySQL
 python-dotenv
