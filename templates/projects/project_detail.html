@@ -45,17 +45,19 @@
                 <div class="mt-5 pt-4 border-top reveal-item" style="--delay: 0.4s">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="pv-overline mb-0">Project Assets & Deliverables</div>
-                        {% if project.status != 'Done' %}
+                        {% if can_upload %}
                         <button class="btn btn-sm pv-btn-primary" onclick="document.getElementById('assetUploadInput').click()">
                             <i class="bi bi-cloud-arrow-up me-2"></i>Upload Files
                         </button>
                         {% endif %}
                     </div>
 
+                    {% if can_upload %}
                     <form id="assetUploadForm" method="post" action="{% url 'projects:project_upload_asset' project.id %}" enctype="multipart/form-data" class="d-none">
                         {% csrf_token %}
                         <input type="file" name="assets" id="assetUploadInput" multiple onchange="this.form.submit()">
                     </form>
+                    {% endif %}
 
                     <div class="pv-asset-grid row g-3">
                         {% for asset in project.assets.all %}
@@ -79,10 +81,10 @@
                                     </div>
                                 </div>
                                 <div class="pv-asset-actions d-flex gap-2">
-                                    <a href="{{ asset.file.url }}" class="btn btn-sm pv-btn-icon" download title="Download">
+                                    <a href="{% url 'projects:project_download_asset' asset.id %}" class="btn btn-sm pv-btn-icon" title="Download">
                                         <i class="bi bi-download"></i>
                                     </a>
-                                    {% if asset.uploaded_by == user or user.is_staff %}
+                                    {% if asset.uploaded_by == user or can_manage %}
                                     <form method="post" action="{% url 'projects:project_delete_asset' asset.id %}" class="d-inline">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm pv-btn-icon text-danger" onclick="return confirm('Delete this asset?')" title="Delete">
@@ -139,14 +141,14 @@
                 </div>
 
                 <div class="mt-4 pt-2">
-                    {% if project.status != 'Done' %}
+                    {% if can_complete %}
                         <form method="post" action="{% url 'projects:project_submit_complete' project.id %}" onsubmit="return confirm('Are you sure you want to mark this project as completed?')">
                             {% csrf_token %}
                             <button type="submit" class="btn pv-btn-complete w-100 py-3">
                                 <i class="bi bi-check-circle-fill me-2"></i>Submit as Completed
                             </button>
                         </form>
-                    {% else %}
+                    {% elif project.status == 'Done' %}
                         <div class="pv-completed-indicator w-100 p-3">
                             <i class="bi bi-check-all fs-4 d-block mb-1"></i>
                             <strong class="d-block">Project Completed</strong>

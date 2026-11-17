@@ -15,13 +15,7 @@ from django.db.models import Q, Count, Subquery, OuterRef
 
 from .models import ChatRoom, ChatMessage, ChatRoomRead
 from .forms import ChatRoomForm
-
-MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_ATTACHMENT_EXTENSIONS = {
-    'jpg', 'jpeg', 'png', 'gif', 'webp',
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-    'txt', 'csv', 'zip', 'rar', '7z'
-}
+from projectview.files import validate_uploaded_file, build_safe_file_response
 
 
 def _get_rooms_with_meta(user):
@@ -307,11 +301,9 @@ def api_message_send(request, room_id):
         return JsonResponse({'error': 'Empty message'}, status=400)
 
     if attachment:
-        if attachment.size > MAX_ATTACHMENT_SIZE:
-            return JsonResponse({'error': 'Attachment exceeds the 10 MB size limit.'}, status=400)
-        ext = attachment.name.rsplit('.', 1)[-1].lower() if '.' in attachment.name else ''
-        if not ext or ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
-            return JsonResponse({'error': f'File type ".{ext}" is not allowed.' if ext else 'Files without extensions are not allowed.'}, status=400)
+        is_valid, err = validate_uploaded_file(attachment)
+        if not is_valid:
+            return JsonResponse({'error': err}, status=400)
 
     parent_msg = None
     if parent_id:
@@ -539,24 +531,8 @@ def api_message_attachment(request, message_id):
     if not msg.attachment:
         raise Http404("Attachment not found.")
 
-    try:
-        file_handle = msg.attachment.open('rb')
-    except (FileNotFoundError, ValueError):
-        raise Http404("Attachment file not found on disk.")
-
-    content_type, _ = mimetypes.guess_type(msg.attachment.name)
-    content_type = content_type or 'application/octet-stream'
-
-    response = FileResponse(file_handle, content_type=content_type)
-    response['X-Content-Type-Options'] = 'nosniff'
-
     filename = msg.attachment_name or os.path.basename(msg.attachment.name)
-    if msg.is_image_attachment:
-        response['Content-Disposition'] = f'inline; filename="{filename}"'
-    else:
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    return response
+    return build_safe_file_response(msg.attachment, filename=filename, is_image=msg.is_image_attachment)
 
 
 # ---------------------------------------------------------------------------

@@ -250,6 +250,20 @@ class ChatAttachmentTests(TestCase):
         dl_resp_bob = self.client.get(f'/chat/api/messages/{msg_id}/attachment/')
         self.assertEqual(dl_resp_bob.status_code, 403)
 
+    def test_chat_attachment_filename_with_quotes(self):
+        self.client.login(username='alice', password='password123')
+        quoted_filename = 'quarterly "report".pdf'
+        file_obj = SimpleUploadedFile(quoted_filename, b"pdf binary content", content_type="application/pdf")
+        resp = self.client.post(f'/chat/api/{self.room.id}/send/', {'content': 'Here is file', 'attachment': file_obj})
+        self.assertEqual(resp.status_code, 200)
+        msg_id = resp.json()['message']['id']
+
+        dl_resp = self.client.get(f'/chat/api/messages/{msg_id}/attachment/')
+        self.assertEqual(dl_resp.status_code, 200)
+        cd = dl_resp.headers.get('Content-Disposition', '')
+        # Unescaped quote like filename="quarterly "report".pdf" is broken HTTP header syntax
+        self.assertNotIn('filename="quarterly "report"', cd)
+
 
 class ChatPaginationTests(TestCase):
     def setUp(self):

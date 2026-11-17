@@ -10,8 +10,34 @@ from .models import Project, ProjectAsset
 from .forms import ProjectForm
 
 
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.utils import timezone
+from django.http import Http404
+from projectview.files import validate_uploaded_file, build_safe_file_response
+
+
+def can_manage_project(user, project):
+    """Check if user is allowed to manage/update project workflow and assets."""
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    role = getattr(user, 'profile', None).role if hasattr(user, 'profile') else 'employee'
+    if role in ['manager', 'hr']:
+        return True
+    return project.created_by == user
+
+
+def can_delete_project_asset(user, asset):
+    """Check if user can delete an asset."""
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    role = getattr(user, 'profile', None).role if hasattr(user, 'profile') else 'employee'
+    if role in ['manager', 'hr']:
+        return True
+    return asset.uploaded_by == user or asset.project.created_by == user
 
 
 @never_cache
@@ -74,7 +100,16 @@ def project_list_view(request):
 @login_required
 def project_detail_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
-    return render(request, 'projects/project_detail.html', {'project': project})
+    can_manage = can_manage_project(request.user, project)
+    can_upload = can_manage and project.status != 'Done'
+    can_complete = can_manage and project.status != 'Done'
+    context = {
+        'project': project,
+        'can_manage': can_manage,
+        'can_upload': can_upload,
+        'can_complete': can_complete,
+    }
+    return render(request, 'projects/project_detail.html', context)
 
 
 @never_cache
@@ -131,6 +166,10 @@ def admin_project_delete(request, pk):
 @require_POST
 def submit_project_complete(request, pk):
     project = get_object_or_404(Project, pk=pk)
+    if not can_manage_project(request.user, project):
+        messages.error(request, 'You do not have permission to mark this project as completed.')
+        return redirect('projects:project_detail', pk=pk)
+
     if project.status != 'Done':
         project.status = 'Done'
         project.completed_at = timezone.now()
@@ -144,21 +183,36 @@ def submit_project_complete(request, pk):
 @require_POST
 def upload_project_asset(request, pk):
     project = get_object_or_404(Project, pk=pk)
+    if not can_manage_project(request.user, project):
+        messages.error(request, 'You do not have permission to upload files to this project.')
+        return redirect('projects:project_detail', pk=pk)
+
+    if project.status == 'Done':
+        messages.error(request, 'Cannot upload files to a completed project.')
+        return redirect('projects:project_detail', pk=pk)
+
     files = request.FILES.getlist('assets')
-    
     if not files:
         messages.error(request, 'No files selected for upload.')
         return redirect('projects:project_detail', pk=pk)
-        
+
+    valid_files = []
     for f in files:
+        is_valid, err = validate_uploaded_file(f)
+        if not is_valid:
+            messages.error(request, f'"{f.name}": {err}')
+            return redirect('projects:project_detail', pk=pk)
+        valid_files.append(f)
+
+    for f in valid_files:
         ProjectAsset.objects.create(
             project=project,
             file=f,
             name=f.name,
             uploaded_by=request.user
         )
-        
-    messages.success(request, f'Successfully uploaded {len(files)} file(s).')
+
+    messages.success(request, f'Successfully uploaded {len(valid_files)} file(s).')
     return redirect('projects:project_detail', pk=pk)
 
 
@@ -168,13 +222,30 @@ def upload_project_asset(request, pk):
 def delete_project_asset(request, asset_id):
     asset = get_object_or_404(ProjectAsset, id=asset_id)
     project_id = asset.project.id
-    
-    # Check permissions (only uploader or admin can delete)
-    if asset.uploaded_by == request.user or request.user.is_staff:
-        asset.file.delete() # Remove file from storage
-        asset.delete() # Remove record from DB
+
+    if can_delete_project_asset(request.user, asset):
+        try:
+            asset.file.delete(save=False)
+        except Exception:
+            pass
+        asset.delete()
         messages.success(request, 'Asset deleted successfully.')
     else:
         messages.error(request, 'Unauthorized to delete this asset.')
-        
+
     return redirect('projects:project_detail', pk=project_id)
+
+
+@never_cache
+@login_required
+@require_GET
+def download_project_asset(request, asset_id):
+    asset = get_object_or_404(ProjectAsset, id=asset_id)
+    if not asset.file:
+        raise Http404("Asset file not found.")
+
+    try:
+        return build_safe_file_response(asset.file, filename=asset.name, is_image=asset.is_image)
+    except Http404:
+        messages.error(request, 'The requested file could not be found on the storage server.')
+        return redirect('projects:project_detail', pk=asset.project.id)

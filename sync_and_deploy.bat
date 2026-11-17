@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo Project View — Sync & Deploy Helper
+echo Project View - Sync and Deploy Helper
 echo ============================================================
 echo.
 
@@ -10,21 +10,25 @@ if "%~1"=="" (
     exit /b 1
 )
 
-echo [1/3] Applying database migrations...
-uv run manage.py migrate
-if %ERRORLEVEL% NEQ 0 (
+echo [1/2] Checking for unreviewed untracked files...
+set "HAS_UNTRACKED="
+for /f "delims=" %%i in ('git status --porcelain ^| findstr /r "^\?\?"') do (
+    set "HAS_UNTRACKED=1"
+)
+
+if defined HAS_UNTRACKED (
     echo.
-    echo ERROR: Migrations failed. Please check your TiDB connection.
+    echo ERROR: Untracked files detected that have not been reviewed:
+    git status -s
+    echo.
+    echo Please review and stage them with 'git add ^<file^>' or add them to .gitignore before deploying.
     pause
-    exit /b %ERRORLEVEL%
+    exit /b 1
 )
 
 echo.
-echo [2/3] Staging changes for Git...
-git add .
-
-echo.
-echo [3/3] Committing and Pushing to Render...
+echo [2/2] Committing and Pushing to Render...
+git add -A
 git commit -m "%~1"
 git push -u origin HEAD
 if %ERRORLEVEL% NEQ 0 (
