@@ -1,11 +1,12 @@
 from django import forms
+from django.contrib.auth.models import User
 from .models import Project
 
 
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['title', 'category', 'details', 'deadline', 'status', 'priority']
+        fields = ['title', 'category', 'details', 'deadline', 'status', 'priority', 'assigned_to']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -29,7 +30,17 @@ class ProjectForm(forms.ModelForm):
             'priority': forms.Select(attrs={
                 'class': 'form-select',
             }),
+            'assigned_to': forms.SelectMultiple(attrs={
+                'class': 'form-select pv-select-multiple',
+                'size': '4',
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('username')
+        self.fields['assigned_to'].required = False
+        self.fields['assigned_to'].label = "Assigned Team Members"
 
     def clean_deadline(self):
         deadline = self.cleaned_data.get('deadline')

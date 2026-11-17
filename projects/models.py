@@ -36,6 +36,7 @@ class Project(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_to = models.ManyToManyField(User, related_name='assigned_projects', blank=True)
 
     class Meta:
         ordering = ['deadline']

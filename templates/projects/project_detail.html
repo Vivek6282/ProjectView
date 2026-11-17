@@ -136,6 +136,16 @@
                     <span class="pv-meta-value">{{ project.created_by.username|default:"System" }}</span>
                 </div>
                 <div class="pv-meta-item">
+                    <span class="pv-meta-label">Assigned To</span>
+                    <span class="pv-meta-value text-end">
+                        {% for member in project.assigned_to.all %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ member.username }}</span>
+                        {% empty %}
+                            <span class="text-muted-custom italic">Unassigned</span>
+                        {% endfor %}
+                    </span>
+                </div>
+                <div class="pv-meta-item">
                     <span class="pv-meta-label">Last Updated</span>
                     <span class="pv-meta-value smaller">{{ project.updated_at|date:'M d, Y H:i' }}</span>
                 </div>

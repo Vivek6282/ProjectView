@@ -10,14 +10,14 @@ The application is configured to run locally on SQLite or in production on Rende
 
 ### 1. Role-Based Access Control (RBAC) & Workflow Permissions
 User permissions are determined by the `UserProfile.role` field:
-- **Employee (`employee`)**: Read-only access to assigned projects, interactive onboarding flow, participation in team chat rooms, direct messaging, and personal broadcast acknowledgment. Standard employees cannot finalize projects or upload files unless they are the project's creator.
-- **Manager (`manager`)**: Project creation and workflow management, team deadline tracking, analytics dashboard, creating group chat rooms, marking projects complete, uploading/deleting project deliverables, and participating in management discussions.
-- **HR Manager (`hr_manager`)**: Organizational visibility, access to the restricted HR-Management Bridge chat room, project workflow permissions, company-wide broadcasts, and HR administrative controls.
+- **Employee (`employee`)**: Access to assigned projects, interactive onboarding flow, participation in team chat rooms, direct messaging, and personal broadcast acknowledgment. Assigned employees (or the project creator) can submit deliverables and mark projects complete.
+- **Manager (`manager`)**: Project creation, team member assignment, workflow management, team deadline tracking, analytics dashboard, creating group chat rooms, marking projects complete, uploading/deleting project deliverables, and participating in management discussions.
+- **HR Manager (`hr_manager`)**: Organizational visibility, access to the restricted HR-Management Bridge chat room, project workflow permissions, team member assignment, company-wide broadcasts, and HR administrative controls.
 - **Staff / Admin (`is_staff=True`)**: Full administrative access, project CRUD operations, user management, and company-wide broadcast authoring.
 
 #### Project Workflow & Deliverable Permissions
-- **Mark Project Complete (`submit_project_complete`)**: Restricted to Managers, HR, Staff/Superuser, or the Project Creator.
-- **Upload Deliverables (`upload_project_asset`)**: Restricted to Managers, HR, Staff/Superuser, or the Project Creator. Blocked once a project is marked `Done`.
+- **Mark Project Complete (`submit_project_complete`)**: Restricted to Managers, HR, Staff/Superuser, the Project Creator, or assigned team members.
+- **Upload Deliverables (`upload_project_asset`)**: Restricted to Managers, HR, Staff/Superuser, the Project Creator, or assigned team members. Blocked once a project is marked `Done`.
 - **Delete Deliverables (`delete_project_asset`)**: Restricted to the asset uploader, the project creator, or Manager/HR/Staff.
 - **Secure File Downloads (`download_project_asset`)**: Login-protected endpoint (`/projects/asset/<id>/download/`) enforcing `X-Content-Type-Options: nosniff`, RFC-safe filename encoding, inline display for safe images, and attachment download for other files. Missing files on disk trigger user-facing notifications instead of unhandled 500 server crashes.
 

@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_or_hr_required
@@ -15,6 +16,8 @@ from django.utils import timezone
 from django.http import Http404
 from projectview.files import validate_uploaded_file, build_safe_file_response
 
+logger = logging.getLogger(__name__)
+
 
 def can_manage_project(user, project):
     """Check if user is allowed to manage/update project workflow and assets."""
@@ -25,7 +28,9 @@ def can_manage_project(user, project):
     role = getattr(user, 'profile', None).role if hasattr(user, 'profile') else 'employee'
     if role in ['manager', 'hr']:
         return True
-    return project.created_by == user
+    if project.created_by == user:
+        return True
+    return project.assigned_to.filter(id=user.id).exists()
 
 
 def can_delete_project_asset(user, asset):
@@ -128,6 +133,7 @@ def admin_project_create(request):
             project = form.save(commit=False)
             project.created_by = request.user
             project.save()
+            form.save_m2m()
             messages.success(request, 'Project created successfully.')
             return redirect('/dashboard/projects/')
     else:
@@ -227,7 +233,7 @@ def delete_project_asset(request, asset_id):
         try:
             asset.file.delete(save=False)
         except Exception:
-            pass
+            logger.exception("Failed to delete asset file %s from storage for asset ID %s", getattr(asset.file, 'name', 'unknown'), asset.id)
         asset.delete()
         messages.success(request, 'Asset deleted successfully.')
     else:

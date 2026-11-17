@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -181,3 +182,63 @@ class ProjectPermissionsAndUploadTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.headers.get('X-Content-Type-Options'), 'nosniff')
         self.assertIn('attachment', resp.headers.get('Content-Disposition', ''))
+
+    def test_assigned_employee_can_upload_and_mark_done(self):
+        """Assigned employee can upload assets and mark project Done."""
+        self.mgr_project.assigned_to.add(self.employee)
+        self.client.login(username='emp', password='pwd')
+
+        # Assigned employee can upload asset
+        f = SimpleUploadedFile("deliverable.pdf", b"deliverable pdf", content_type="application/pdf")
+        resp = self.client.post(f'/projects/{self.mgr_project.id}/upload-asset/', {'assets': [f]})
+        self.assertEqual(self.mgr_project.assets.count(), 1)
+        asset = self.mgr_project.assets.first()
+        self.assertEqual(asset.uploaded_by, self.employee)
+
+        # Assigned employee can mark project Done
+        resp_done = self.client.post(f'/projects/{self.mgr_project.id}/submit-complete/')
+        self.mgr_project.refresh_from_db()
+        self.assertEqual(self.mgr_project.status, 'Done')
+
+    def test_assigned_employee_delete_own_file_only(self):
+        """Assigned employee can delete their own uploaded file, but not others' files."""
+        self.mgr_project.assigned_to.add(self.employee)
+
+        mgr_asset = ProjectAsset.objects.create(
+            project=self.mgr_project,
+            file=SimpleUploadedFile("mgr_spec.pdf", b"spec content", content_type="application/pdf"),
+            name="mgr_spec.pdf",
+            uploaded_by=self.manager
+        )
+        emp_asset = ProjectAsset.objects.create(
+            project=self.mgr_project,
+            file=SimpleUploadedFile("emp_work.pdf", b"work content", content_type="application/pdf"),
+            name="emp_work.pdf",
+            uploaded_by=self.employee
+        )
+
+        self.client.login(username='emp', password='pwd')
+
+        # Cannot delete manager's asset
+        resp1 = self.client.post(f'/projects/asset/{mgr_asset.id}/delete/')
+        self.assertTrue(ProjectAsset.objects.filter(id=mgr_asset.id).exists())
+
+        # Can delete own asset
+        resp2 = self.client.post(f'/projects/asset/{emp_asset.id}/delete/')
+        self.assertFalse(ProjectAsset.objects.filter(id=emp_asset.id).exists())
+
+    def test_delete_project_asset_logs_exception_on_storage_failure(self):
+        """Storage failure on file deletion is caught and logged, and database record is still removed."""
+        asset = ProjectAsset.objects.create(
+            project=self.mgr_project,
+            file=SimpleUploadedFile("to_delete.pdf", b"content", content_type="application/pdf"),
+            name="to_delete.pdf",
+            uploaded_by=self.manager
+        )
+        self.client.login(username='mgr', password='pwd')
+
+        with patch('django.db.models.fields.files.FieldFile.delete', side_effect=OSError("Storage disk read-only")):
+            with self.assertLogs('projects.views', level='ERROR') as cm:
+                resp = self.client.post(f'/projects/asset/{asset.id}/delete/')
+                self.assertFalse(ProjectAsset.objects.filter(id=asset.id).exists())
+                self.assertTrue(any('Failed to delete asset file' in log_msg for log_msg in cm.output))
