@@ -4,3 +4,5 @@ whitenoise[brotli]
 dj-database-url
 PyMySQL
 python-dotenv
+django-storages>=1.14
+boto3>=1.34

@@ -17,5 +17,21 @@ services:
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
         sync: false
-      - key: MEDIA_ROOT
+      # Storage Option 1: Cloudflare R2 (S3-compatible, free 10 GB tier)
+      - key: AWS_STORAGE_BUCKET_NAME
         sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: "auto"
+      # Storage Option 2: Render Persistent Disk (Paid Render tier)
+      - key: MEDIA_ROOT
+        value: /var/data/media
+    disk:
+      name: projectview-media
+      mountPath: /var/data/media
+      sizeGB: 1

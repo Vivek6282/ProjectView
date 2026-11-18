@@ -3,8 +3,11 @@ from unittest.mock import patch
 from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import storages, FileSystemStorage
 from accounts.models import UserProfile
 from projects.models import Project, ProjectAsset
+from projects.forms import ProjectForm
+from chat.models import ChatRoom, ChatMessage
 from datetime import date, timedelta
 
 
@@ -242,3 +245,145 @@ class ProjectPermissionsAndUploadTests(TestCase):
                 resp = self.client.post(f'/projects/asset/{asset.id}/delete/')
                 self.assertFalse(ProjectAsset.objects.filter(id=asset.id).exists())
                 self.assertTrue(any('Failed to delete asset file' in log_msg for log_msg in cm.output))
+
+
+class ProjectFormAssignedTeamMembersTests(TestCase):
+    def setUp(self):
+        # Active employee
+        self.emp_active = User.objects.create_user(username='emp_active', password='pwd')
+        self.emp_active.profile.role = 'employee'
+        self.emp_active.profile.save()
+
+        # Inactive employee
+        self.emp_inactive = User.objects.create_user(username='emp_inactive', password='pwd', is_active=False)
+        self.emp_inactive.profile.role = 'employee'
+        self.emp_inactive.profile.save()
+
+        # Active manager
+        self.mgr_active = User.objects.create_user(username='mgr_active', password='pwd')
+        self.mgr_active.profile.role = 'manager'
+        self.mgr_active.profile.save()
+
+        # Active HR
+        self.hr_active = User.objects.create_user(username='hr_active', password='pwd')
+        self.hr_active.profile.role = 'hr'
+        self.hr_active.profile.save()
+
+    def test_form_creation_offers_only_active_employees(self):
+        """ProjectForm when creating a project only offers active users with the employee role."""
+        form = ProjectForm()
+        qs = form.fields['assigned_to'].queryset
+        self.assertIn(self.emp_active, qs)
+        self.assertNotIn(self.emp_inactive, qs)
+        self.assertNotIn(self.mgr_active, qs)
+        self.assertNotIn(self.hr_active, qs)
+
+    def test_form_edit_preserves_assigned_non_employees_and_inactive(self):
+        """When editing, previously assigned users stay in the queryset and survive form saves."""
+        # Create a project with assigned users: active employee, active manager, and inactive employee
+        project = Project.objects.create(
+            title='Legacy Project',
+            category='Web Development',
+            deadline=date.today() + timedelta(days=14),
+            status='In Progress',
+            created_by=self.mgr_active
+        )
+        project.assigned_to.set([self.emp_active, self.mgr_active, self.emp_inactive])
+
+        # Another unassigned manager and inactive user
+        other_mgr = User.objects.create_user(username='other_mgr', password='pwd')
+        other_mgr.profile.role = 'manager'
+        other_mgr.profile.save()
+
+        other_inactive = User.objects.create_user(username='other_inactive', password='pwd', is_active=False)
+        other_inactive.profile.role = 'employee'
+        other_inactive.profile.save()
+
+        form = ProjectForm(instance=project)
+        qs = form.fields['assigned_to'].queryset
+
+        # Assigned non-employees and inactive employees are preserved in the queryset
+        self.assertIn(self.emp_active, qs)
+        self.assertIn(self.mgr_active, qs)
+        self.assertIn(self.emp_inactive, qs)
+
+        # Unassigned managers and inactive employees are NOT included
+        self.assertNotIn(other_mgr, qs)
+        self.assertNotIn(other_inactive, qs)
+
+        # Submitting the form with all assigned users succeeds without silently removing them
+        data = {
+            'title': 'Legacy Project Updated',
+            'category': 'Web Development',
+            'deadline': date.today() + timedelta(days=14),
+            'status': 'In Progress',
+            'priority': 'Medium',
+            'assigned_to': [self.emp_active.id, self.mgr_active.id, self.emp_inactive.id]
+        }
+        form_submit = ProjectForm(data=data, instance=project)
+        self.assertTrue(form_submit.is_valid(), form_submit.errors)
+        saved_project = form_submit.save()
+
+        assigned_ids = set(saved_project.assigned_to.values_list('id', flat=True))
+        self.assertEqual(assigned_ids, {self.emp_active.id, self.mgr_active.id, self.emp_inactive.id})
+
+
+class StorageConfigurationAndSecurityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='pwd')
+        self.other_user = User.objects.create_user(username='otheruser', password='pwd')
+        self.project = Project.objects.create(
+            title='Storage Project',
+            category='Security',
+            deadline=date.today() + timedelta(days=5),
+            status='In Progress',
+            created_by=self.user
+        )
+
+    def test_local_disk_storage_fallback_when_env_unset(self):
+        """When S3/R2 environment variables are unset, local FileSystemStorage is active."""
+        self.assertIsInstance(storages['default'], FileSystemStorage)
+
+    def test_unauthorized_user_refused_access_to_chat_attachment(self):
+        """Users outside a chat room cannot download attachments through the permission-checked endpoint."""
+        room = ChatRoom.objects.create(name='Private Room', room_type='GROUP', created_by=self.user)
+        room.members.add(self.user)
+
+        msg = ChatMessage.objects.create(
+            room=room,
+            sender=self.user,
+            content='Secret file',
+            attachment=SimpleUploadedFile("secret.pdf", b"classified content", content_type="application/pdf"),
+            attachment_name="secret.pdf"
+        )
+
+        # Non-member cannot download attachment
+        self.client.login(username='otheruser', password='pwd')
+        resp = self.client.get(f'/chat/api/messages/{msg.id}/attachment/')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_anonymous_user_refused_access_to_project_asset(self):
+        """Unauthenticated user cannot access project asset downloads."""
+        asset = ProjectAsset.objects.create(
+            project=self.project,
+            file=SimpleUploadedFile("asset.pdf", b"asset content", content_type="application/pdf"),
+            name="asset.pdf",
+            uploaded_by=self.user
+        )
+        resp = self.client.get(f'/projects/asset/{asset.id}/download/')
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/login/', resp.headers.get('Location', ''))
+
+    def test_authorized_user_downloads_with_safe_headers(self):
+        """Authorized user gets safe headers (nosniff, attachment for non-images)."""
+        asset = ProjectAsset.objects.create(
+            project=self.project,
+            file=SimpleUploadedFile("report.pdf", b"%PDF-1.4 pdf data", content_type="application/pdf"),
+            name="report.pdf",
+            uploaded_by=self.user
+        )
+        self.client.login(username='testuser', password='pwd')
+        resp = self.client.get(f'/projects/asset/{asset.id}/download/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get('X-Content-Type-Options'), 'nosniff')
+        self.assertIn('attachment', resp.headers.get('Content-Disposition', ''))

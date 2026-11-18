@@ -36,11 +36,26 @@ def build_safe_file_response(file_field_or_handle, filename=None, is_image=None)
     Build a FileResponse with nosniff header, safe RFC-encoded Content-Disposition,
     inline display for safe images, and attachment download for other files.
     """
+    if hasattr(file_field_or_handle, 'storage') and hasattr(file_field_or_handle, 'name'):
+        try:
+            if file_field_or_handle.name and not file_field_or_handle.storage.exists(file_field_or_handle.name):
+                raise Http404("File not found on storage server.")
+        except Http404:
+            raise
+        except Exception:
+            pass
+
     if hasattr(file_field_or_handle, 'open'):
         try:
             file_handle = file_field_or_handle.open('rb')
         except (FileNotFoundError, ValueError, OSError):
             raise Http404("File not found on storage server.")
+        except Exception as e:
+            err_code = getattr(getattr(e, 'response', None), 'get', lambda k: None)('Error', {}).get('Code', '')
+            err_str = str(e).lower()
+            if err_code in ('NoSuchKey', '404', 'NoSuchBucket') or 'nosuchkey' in err_str or '404' in err_str or 'not found' in err_str:
+                raise Http404("File not found on storage server.")
+            raise
     else:
         file_handle = file_field_or_handle
 

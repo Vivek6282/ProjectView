@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.contrib.auth.models import User
 from .models import Project
 
@@ -38,7 +39,10 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('username')
+        base_q = Q(is_active=True, profile__role='employee')
+        if self.instance and self.instance.pk:
+            base_q = base_q | Q(id__in=self.instance.assigned_to.values_list('id', flat=True))
+        self.fields['assigned_to'].queryset = User.objects.filter(base_q).distinct().order_by('username')
         self.fields['assigned_to'].required = False
         self.fields['assigned_to'].label = "Assigned Team Members"
 

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
     'accounts',
     'projects',
     'dashboard',
@@ -138,18 +139,49 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": (
-            "whitenoise.storage.CompressedManifestStaticFilesStorage"
-            if not DEBUG
-            else "django.contrib.staticfiles.storage.StaticFilesStorage"
-        ),
-    },
-}
+r2_bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME') or os.environ.get('CLOUDFLARE_R2_BUCKET_NAME')
+r2_access_key = os.environ.get('AWS_ACCESS_KEY_ID') or os.environ.get('CLOUDFLARE_R2_ACCESS_KEY_ID')
+r2_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY') or os.environ.get('CLOUDFLARE_R2_SECRET_ACCESS_KEY')
+r2_endpoint_url = os.environ.get('AWS_S3_ENDPOINT_URL') or os.environ.get('CLOUDFLARE_R2_ENDPOINT_URL')
+r2_region = os.environ.get('AWS_S3_REGION_NAME', 'auto')
+
+if r2_bucket and r2_access_key and r2_secret_key:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": r2_bucket,
+                "access_key": r2_access_key,
+                "secret_key": r2_secret_key,
+                "endpoint_url": r2_endpoint_url,
+                "region_name": r2_region,
+                "signature_version": "s3v4",
+                "file_overwrite": False,
+                "default_acl": None,
+                "querystring_auth": True,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": (
+                "whitenoise.storage.CompressedManifestStaticFilesStorage"
+                if not DEBUG
+                else "django.contrib.staticfiles.storage.StaticFilesStorage"
+            ),
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": (
+                "whitenoise.storage.CompressedManifestStaticFilesStorage"
+                if not DEBUG
+                else "django.contrib.staticfiles.storage.StaticFilesStorage"
+            ),
+        },
+    }
 
 MEDIA_URL = '/media/'
 media_root_env = os.environ.get('MEDIA_ROOT')

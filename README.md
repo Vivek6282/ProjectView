@@ -60,7 +60,12 @@ Configure the following variables in `.env` (refer to `.env.example`):
 | `ALLOWED_HOSTS` | Production: Yes | `localhost,127.0.0.1` | Comma-separated list of allowed hostnames. In Render environments, `RENDER_EXTERNAL_HOSTNAME` is automatically appended. |
 | `CSRF_TRUSTED_ORIGINS` | No | Derived from `ALLOWED_HOSTS` | Comma-separated list of trusted origins for CSRF (e.g., `https://projectview.onrender.com`). |
 | `RENDER_EXTERNAL_HOSTNAME` | No | `""` | Render environment variable containing the public URL for the service. |
-| `MEDIA_ROOT` | No | `<BASE_DIR>/media` | Absolute or relative path to store user-uploaded chat attachments. In Render, point this to your persistent disk mount path. |
+| `MEDIA_ROOT` | No | `<BASE_DIR>/media` | Absolute or relative path to store user-uploaded files locally. When using Render Persistent Disk, point this to the disk mount path (e.g. `/var/data/media`). |
+| `AWS_STORAGE_BUCKET_NAME` | No (Cloudflare R2) | Unset | Cloudflare R2 / S3 bucket name for persistent object storage. When set with credentials, overrides local storage. |
+| `AWS_ACCESS_KEY_ID` | No (Cloudflare R2) | Unset | Cloudflare R2 API token Access Key ID. |
+| `AWS_SECRET_ACCESS_KEY` | No (Cloudflare R2) | Unset | Cloudflare R2 API token Secret Access Key. |
+| `AWS_S3_ENDPOINT_URL` | No (Cloudflare R2) | Unset | Cloudflare R2 endpoint URL (`https://<account_id>.r2.cloudflarestorage.com`). |
+| `AWS_S3_REGION_NAME` | No | `auto` | S3 region name (use `auto` for Cloudflare R2). |
 
 ---
 
@@ -159,9 +164,33 @@ python manage.py collectstatic --no-input
 python manage.py migrate
 ```
 
-### 2. Persistent Disk Configuration (Media Uploads)
-Because Render's container filesystem is ephemeral and reset across deploys, configure a **Persistent Disk** for chat attachments:
-1. In the Render Dashboard, attach a Disk (e.g., size 1 GB, mounted at `/var/data`).
-2. Add an environment variable in your service:
+### 2. File Storage Persistence Across Deploys
+Because Render's container filesystem is ephemeral and reset on each deploy, user-uploaded project assets and chat attachments must be persisted via either **Cloudflare R2** (Recommended, free tier) or a **Render Persistent Disk** (Paid tier).
+
+#### Option A: Cloudflare R2 (Recommended - Free Tier, Zero Egress Fees)
+Cloudflare R2 provides 10 GB of free S3-compatible storage every month with no egress bandwidth fees.
+1. Sign up or log into the [Cloudflare Dashboard](https://dash.cloudflare.com/).
+2. Navigate to **R2 Storage** and create a new bucket (e.g. `projectview-uploads`). Keep the bucket **private**.
+3. In **R2 > Manage R2 API Tokens**, click **Create API Token**:
+   - Permissions: **Object Read & Write**
+   - Bucket scope: select your bucket (or all buckets)
+   - TTL: Permanent or as desired
+4. Note your **Access Key ID**, **Secret Access Key**, and **Endpoint URL** (`https://<account-id>.r2.cloudflarestorage.com`).
+5. In your Render Dashboard (or `render.yaml`), add the following environment variables under your web service:
+   - `AWS_STORAGE_BUCKET_NAME=projectview-uploads`
+   - `AWS_ACCESS_KEY_ID=<your-access-key-id>`
+   - `AWS_SECRET_ACCESS_KEY=<your-secret-access-key>`
+   - `AWS_S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
+   - `AWS_S3_REGION_NAME=auto`
+6. Deploy your application. The app automatically activates `django-storages` S3 backend, while downloads remain protected through permission-checked Django views.
+
+#### Option B: Render Persistent Disk (Paid Tier)
+Render Persistent Disks require a paid instance type (Starter plan or above, plus disk costs at $0.25/GB/month):
+1. In the Render Dashboard, open your Web Service and navigate to **Disks**.
+2. Click **Add Disk**, specify name `projectview-media`, size `1 GB`, and mount path `/var/data`.
+3. Set the environment variable:
    - `MEDIA_ROOT=/var/data/media`
-3. Attachments uploaded by users will now persist safely across deploys and container restarts.
+4. Deploy the service. (Alternatively, apply the disk configuration defined in `render.yaml`).
+
+> [!NOTE]
+> If environment variables for Cloudflare R2 are unset, the application automatically falls back to local disk storage (`MEDIA_ROOT`). If an asset record exists in the database but the underlying physical file was lost in an earlier ephemeral deploy, the download endpoints gracefully catch the missing file and notify the user with a flash alert instead of crashing with a 500 server error.
